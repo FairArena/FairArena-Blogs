@@ -5,71 +5,72 @@
 ---
 
 <p align="center">
-  <strong>Modern full-stack platform for fair and transparent skill assessment</strong>
-</p>
-
----
-
-# [Project Name]
-
-<!--
-  README TEMPLATE
-
-  Instructions:
-  1. Replace all [Placeholders] with your specific project details.
-  2. Uncomment and fill in the sections relevant to your project.
-  3. Remove these instruction comments before publishing.
--->
-
-<p align="center">
-  <!-- <img src="./path/to/your/logo.png" alt="Logo" width="150" height="150"> -->
+  <strong>Engineering deep dives, technical insights, and the story behind FairArena</strong>
 </p>
 
 <p align="center">
-  <strong>[Insert Project Tagline or Short Description]</strong>
+  <a href="https://github.com/FairArena/FairArena-Blogs/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  </a>
+  <a href="https://github.com/FairArena/FairArena-Blogs/issues">
+    <img src="https://img.shields.io/github/issues/FairArena/FairArena-Blogs" alt="GitHub issues">
+  </a>
+  <a href="https://github.com/FairArena/FairArena-Blogs/stargazers">
+    <img src="https://img.shields.io/github/stars/FairArena/FairArena-Blogs" alt="GitHub stars">
+  </a>
 </p>
 
 <p align="center">
-  <!-- Add your Badges here (e.g., License, Version, CI/CD Status) -->
-  <!-- <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"> -->
-</p>
-
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#tech-stack">Stack</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#documentation">Docs</a>
+  <a href="#-overview">Overview</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-getting-started">Getting Started</a> •
+  <a href="#-contributing">Contributing</a>
 </p>
 
 ---
 
 ## 🚀 Overview
 
-[Provide a comprehensive description of your project. What problem does it solve? Who is the target audience? What are the main goals?]
+**FairArena-Blogs** is the official engineering blog repository for FairArena, a modern full-stack platform for fair and transparent skill assessment. This repository houses our technical content platform built with Next.js 15, showcasing our journey building a production-grade assessment platform.
+
+The blog serves as a knowledge hub where we share:
+- **Architecture decisions** and technical deep dives
+- **Engineering challenges** and how we solve them
+- **Best practices** from building scalable systems
+- **Developer stories** from the FairArena team
+
+Built with performance, SEO, and developer experience in mind, this blog demonstrates the same engineering excellence we apply to our core platform.
 
 ---
 
 ## ✨ Features
 
-<!-- List the key features of your application -->
-
-- **[Feature One]**: [Description of what this feature does]
-- **[Feature Two]**: [Description of what this feature does]
-- **[Feature Three]**: [Description of what this feature does]
+- **📝 MDX-Powered Content**: Write blog posts in Markdown with embedded React components for interactive content
+- **🔍 Advanced SEO**: Full JSON-LD schema support, dynamic sitemaps, and optimized metadata for maximum discoverability
+- **🖼️ Smart Image Handling**: Custom image component with automatic error handling, lazy loading, and Next.js optimization
+- **⚡ Lightning Fast**: Static Site Generation (SSG) for instant page loads and optimal Core Web Vitals
+- **🎨 Modern UI/UX**: Polished interface built with Tailwind CSS v4 and Shadcn UI components
+- **🔒 Type-Safe**: Full TypeScript integration for content frontmatter, components, and data structures
+- **📱 Responsive Design**: Seamless experience across all devices and screen sizes
+- **🎯 Content Management**: Fumadocs MDX for type-safe, structured content processing
 
 ---
 
 ## 🛠 Tech Stack
 
-<!-- Update this table to reflect the technologies used in your project -->
-
-| Category     | Technology          | Description              |
-| ------------ | ------------------- | ------------------------ |
-| **Frontend** | [e.g. React]        | [e.g. UI Library]        |
-| **Backend**  | [e.g. Node.js]      | [e.g. Server Runtime]    |
-| **Database** | [e.g. PostgreSQL]   | [e.g. Main Database]     |
-| **Styling**  | [e.g. Tailwind CSS] | [e.g. Styling Framework] |
-| **DevOps**   | [e.g. Docker]       | [e.g. Containerization]  |
+| Category         | Technology      | Description                              |
+| ---------------- | --------------- | ---------------------------------------- |
+| **Framework**    | Next.js 15      | App Router & React Server Components    |
+| **Styling**      | Tailwind CSS v4 | Utility-first CSS framework              |
+| **UI Components** | Shadcn UI      | Customizable component library           |
+| **Content**      | Fumadocs MDX    | Type-safe Markdown processing & routing  |
+| **Images**       | Next.js Image   | Optimized image delivery & transformation |
+| **Language**     | TypeScript      | Strict type safety throughout            |
+| **Linting**      | ESLint          | Code quality and consistency             |
+| **Formatting**   | Prettier        | Automated code formatting                |
+| **Git Hooks**    | Husky           | Pre-commit quality checks                |
+| **Package Manager** | pnpm         | Fast, disk space efficient package manager |
 
 ---
 
@@ -77,19 +78,24 @@
 
 ### Prerequisites
 
-<!-- List software required to run the project -->
+Make sure you have the following installed:
 
-- **Node.js** (v[Version]+)
-- **pnpm** (v[Version]+)
-- **Docker** (Optional)
+- **Node.js** (v18.0.0 or higher)
+- **pnpm** (v9.0.0 or higher)
+
+```bash
+# Check versions
+node --version
+pnpm --version
+```
 
 ### Installation
 
 1. **Clone the repository**
 
    ```bash
-   git clone [your-repo-url]
-   cd [project-folder-name]
+   git clone https://github.com/FairArena/FairArena-Blogs.git
+   cd FairArena-Blogs
    ```
 
 2. **Install dependencies**
@@ -98,91 +104,178 @@
    pnpm install
    ```
 
-3. **Environment Configuration**
-
-   Create `.env` files based on the provided examples:
+3. **Navigate to the Blogs directory**
 
    ```bash
-   cp Backend/.env.example Backend/.env
-   cp Frontend/.env.example Frontend/.env.local
-   ```
-
-   _Update the created `.env` files with your specific configuration values._
-
-4. **Database Setup**
-   ```bash
-   # [Insert commands to setup/migrate database]
-   cd Backend && pnpm db:migrate
+   cd Blogs
    ```
 
 ### Running the Application
 
-You can start the services using the following commands:
+**Development Server**
 
-**Backend Server**
+Start the development server with hot reload:
 
 ```bash
-cd Backend
+cd Blogs
 pnpm dev
 ```
 
-**Frontend Application**
+Open [http://localhost:3000](http://localhost:3000) to view the blog in your browser.
+
+**Production Build**
+
+Build and run the optimized production version:
 
 ```bash
-cd Frontend
-pnpm dev
+cd Blogs
+pnpm build
+pnpm start
+```
+
+**Linting and Formatting**
+
+```bash
+# Run linting
+pnpm lint
+
+# Format code
+pnpm format
 ```
 
 ---
 
 ## 📁 Project Structure
 
-<!-- Briefly explain the folder structure if necessary -->
-
 ```text
 .
-├── Backend/            # [Backend Description]
-├── Frontend/           # [Frontend Description]
-├── ShellScripts/       # [Scripts Description]
-└── ...
+├── .github/             # GitHub workflows and configuration
+├── .husky/              # Git hooks for code quality
+├── Blogs/               # Main Next.js blog application
+│   ├── app/             # Next.js App Router pages
+│   ├── components/      # React components (SmartImage, Navbar, etc.)
+│   ├── content/         # MDX source files for blogs and docs
+│   │   ├── blogs/       # Blog post MDX files
+│   │   └── docs/        # Documentation MDX files
+│   ├── lib/             # Utility functions and source adapters
+│   ├── public/          # Static assets and images
+│   └── ...
+├── scripts/             # Utility scripts for automation
+├── CONTRIBUTING.md      # Contribution guidelines
+├── CODE_OF_CONDUCT.md   # Community code of conduct
+├── SECURITY.md          # Security policy
+└── README.md            # This file
 ```
 
 ---
 
-## 📚 Documentation
+## 📝 Writing Blog Posts
 
-<!-- Link to additional documentation or Wiki -->
+To create a new blog post:
 
-- [API Documentation](./path/to/docs)
-- [Architecture Overview](./path/to/docs)
+1. **Create a new MDX file** in `Blogs/content/blogs/`
+
+   ```bash
+   touch Blogs/content/blogs/my-new-post.mdx
+   ```
+
+2. **Add frontmatter** with required metadata:
+
+   ```mdx
+   ---
+   title: "Your Blog Post Title"
+   description: "A concise description of your post"
+   date: 2026-01-25
+   authors:
+     - name: Your Name
+       url: https://github.com/yourusername
+   ---
+
+   Your content here...
+   ```
+
+3. **Write your content** using Markdown and React components
+
+4. **Preview locally** by running the development server
+
+For detailed guidelines, see our [Contributing Guide](CONTRIBUTING.md).
 
 ---
 
 ## 🤝 Contributing
 
-[Instructions on how to contribute to the project]
+We welcome contributions from the community! Whether it's:
 
-1. Fork the Project
-2. Create your Feature Branch
-3. Commit your Changes
-4. Push to the Branch
-5. Open a Pull Request
+- 📖 Writing blog posts about your experiences
+- 🐛 Reporting bugs or issues
+- 💡 Suggesting new features or improvements
+- 🔧 Submitting pull requests
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before getting started.
+
+### Quick Contribution Steps
+
+1. **Fork the repository**
+2. **Create your feature branch** (`git checkout -b feature/AmazingFeature`)
+3. **Commit your changes** (follow our [commit message guidelines](Commit-message.md))
+4. **Push to the branch** (`git push origin feature/AmazingFeature`)
+5. **Open a Pull Request**
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **Proprietary License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👤 Author
+## 🔒 Security
 
-**[Your Name/Organization]**
+We take security seriously. If you discover a security vulnerability, please follow our [Security Policy](SECURITY.md) for responsible disclosure.
 
-- Website: [Your Website URL]
-- GitHub: [Your GitHub Profile URL]
-- Email: [Your Email Address]
+---
+
+## 👥 Team
+
+**FairArena Engineering Team**
+
+- 🌐 Website: [https://fair.sakshamg.me](https://fair.sakshamg.me)
+- 💻 GitHub: [@FairArena](https://github.com/FairArena)
+- 📧 Email: contact@fairarena.com
+
+### Key Contributors
+
+- **Saksham Goel** - [@Saksham-Goel1107](https://github.com/Saksham-Goel1107)
+
+---
+
+## 🔗 Related Projects
+
+- [FairArena Main Platform](https://github.com/FairArena) - The core skill assessment platform
+
+---
+
+## 📊 Project Status
+
+This project is actively maintained and regularly updated with new content and features.
+
+- ✅ Production-ready
+- ✅ Actively maintained
+- ✅ Accepting contributions
+- ✅ SEO optimized
+- ✅ Performance optimized
+
+---
+
+## 💬 Support
+
+Need help or have questions?
+
+- 📖 Check our [documentation](https://github.com/FairArena/FairArena-Blogs/wiki)
+- 💬 Open a [GitHub Discussion](https://github.com/FairArena/FairArena-Blogs/discussions)
+- 🐛 Report issues in the [Issue Tracker](https://github.com/FairArena/FairArena-Blogs/issues)
+
+---
 
 <p align="center">
   <sub>Built with ❤️ by the FairArena Team</sub>
