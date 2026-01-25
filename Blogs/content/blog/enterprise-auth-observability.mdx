@@ -1,0 +1,61 @@
+---
+title: Integrating Atlassian & New Relic
+description: A deep dive into our recent overhaul of the authentication flow, adding Atlassian OAuth and robust observability with New Relic.
+date: 2026-01-23
+author: FairArena Engineering
+image: https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=1200&h=630&fit=crop
+tags: [Auth, Enterprise, Observability, DevOps]
+---
+
+## Expanding Identity Providers
+
+In the enterprise software landscape, friction-free onboarding is paramount. To support our larger customers, we recently expanded our OAuth providers to include **Atlassian**, enabling teams already using Jira and Confluence to log in seamlessly to FairArena. This wasn't just a UI change; it required a significant refactor of our authentication backend.
+
+### The Implementation Strategy
+
+We treat identity providers as plugins in our auth service. Adding Atlassian involved updating our `OAuthSocials` component and backend logic to handle the specific token exchange flow required by Atlassian's OAuth 2.0 implementation.
+
+![Authentication Flow Diagram](https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=800&h=400&fit=crop)
+
+The key steps in our implementation were:
+
+1.  **Environment Config**: We standardized our configuration management, adding variables for `ATLASSIAN_CLIENT_ID` and `ATLASSIAN_CLIENT_SECRET` to our secure vault.
+2.  **API Routing**: We introduced dedicated endpoints at `/api/v1/auth/atlassian`. This separates the concerns of initiation and callback handling, allowing for better error reporting.
+3.  **Frontend Integration**: A new "Continue with Atlassian" button was added to the sign-in modal, designed to match the Atlassian design system guidelines for familiarity.
+
+## Debugging the Device Flow
+
+Parallel to the Atlassian integration, we refined the **OAuth 2.0 Device Authorization Flow**. This flow is critical for CLI tools and headless environments where a browser isn't readily available.
+
+We encountered a persistent issue where the frontend consent page would show "Unknown Application". Deep debugging revealed that the `client_id` being passed during the verification step was not effectively matching the stored session.
+
+The fix involved strict validation logic in our `/device/verify` endpoint, ensuring that the user code provided mapped 1:1 to a pending session _before_ attempting to retrieve application metadata. This seemingly small check eliminated a major source of user confusion.
+
+## Observability with New Relic
+
+With these new complex auth flows, "flying blind" was no longer an option. We chose **New Relic** to provide deep observability into our infrastructure. Integrating the New Relic Infrastructure Agent into our existing Docker Compose stack allowed us to monitor container health, CPU usage, and network latency in real-time.
+
+```yaml
+newrelic:
+  build:
+    context: .
+    dockerfile: newrelic-infra.dockerfile
+  cap_add:
+    - SYS_PTRACE
+  pid: host
+  privileged: true
+  volumes:
+    - '/:/host:ro,rslave'
+  environment:
+    - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+```
+
+### Identifying Bottlenecks
+
+Almost immediately after deployment, New Relic highlighted a latency spike in our database connection pool during peak login times. Specifically, the Atlassian callback handler was holding connections open longer than necessary while waiting for profile data.
+
+By refactoring this to an asynchronous job queue, we reduced the perceived login time by **400ms**, a massive win for user experience.
+
+## Conclusion
+
+Authentication is the front door to any application. If it's hard to open, nobody comes in. By expanding our provider list and backing it with industrial-grade observability, we ensure that FairArena remains accessible, secure, and performant for everyone from individual developers to large enterprise teams.

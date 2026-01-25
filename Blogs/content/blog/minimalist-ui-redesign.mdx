@@ -1,0 +1,49 @@
+---
+title: Refactoring our UI with Shadcn
+description: Why we moved to a "blackish" minimalist theme and how we leveraged Shadcn UI to speed up development.
+date: 2026-01-14
+author: FairArena Design
+image: https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200&h=630&fit=crop
+tags: [Design, UI/UX, Tailwind, Shadcn]
+---
+
+## The Clutter Problem
+
+As products grow, so does visual noise. Our Unsubscribe and Feedback pages had become a hodgepodge of styles—legacy buttons mixed with new inputs, conflicting color palettes, and inconsistent spacing. It wasn't just ugly; it was confusing for users.
+
+We decided to strip it all down. Our goal: a "blackish," hyper-minimalist aesthetic that focused purely on content and action.
+
+## Adopting Shadcn UI
+
+We chose **Shadcn UI** not just for its looks, but for its philosophy. Unlike traditional component libraries that lock you into their implementation, Shadcn gives you ownership of the code.
+
+### The Redesign Process
+
+1.  **The Unsubscribe Page**: We removed all distractions. No header navigation, no upsell links. Just a clean, centered card confirming the action.
+2.  **The Feedback Form**: We switched to a dark-themed modal with a single textarea and a clear call-to-action.
+
+```tsx
+// Example of our minimal button component
+import { Button } from '@/components/ui/button';
+
+export function MinimalButton({ children }) {
+  return (
+    <Button
+      variant="ghost"
+      className="text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+    >
+      {children}
+    </Button>
+  );
+}
+```
+
+![Minimalist UI Concept](https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop)
+
+## The "Blackish" Theme
+
+True black (`#000000`) can be harsh on screens. We settled on a rich, deep charcoal (`#0A0A0A`) for our backgrounds. This reduces eye strain while identifying as a premium, modern developer tool. To maintain contrast, we paired this with `zinc-400` for secondary text and crisp white for primary headers.
+
+## Why It Matters
+
+Design isn't just decoration. By reducing visual cognitive load, we found that completion rates on our feedback forms actually _increased_. Users appreciate clarity. In a world of noisy interfaces, silence is a feature.

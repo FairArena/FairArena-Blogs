@@ -1,0 +1,50 @@
+---
+title: Engineering Architecture
+description: Comprehensive overview of the FairArena platform architecture, including backend microservices, event-driven pipelines, and security layers.
+---
+
+## System Overview
+
+FairArena is built as a modular, high-performance platform designed to handle complex skill assessment workflows. Our architecture prioritizes **scalability**, **type safety**, and **observability**.
+
+<Cards>
+  <Card title="Backend API" href="https://github.com/FairArena/FairArena/tree/main/Backend" />
+  <Card title="Frontend App" href="https://github.com/FairArena/FairArena/tree/main/Frontend" />
+</Cards>
+
+## Core Components
+
+### 1. The Monolithic Core (Express + Prisma)
+
+While we advocate for modularity, our core business logic resides in a robust Express.js monolith. This ensures strong transactional integrity for sensitive operations like billing and team management.
+
+- **ORM**: Prisma for type-safe database access.
+- **Validation**: Zod for runtime schema validation.
+
+### 2. Event-Driven Workflows (Inngest)
+
+Background processing is handled by Inngest. We have over **34 event functions** handling everything from sending emails to AI model inference.
+
+- **Reliability**: Automatic retries and active dead-letter queues.
+- **Serverless**: Functions run independently of the main API loop.
+
+### 3. Data Layer (Postgres + Redis)
+
+- **Primary DB**: PostgreSQL 15 running in high-availability mode with read replicas.
+- **Cache**: Redis 7 used for session storage, rate limiting counters, and API response caching.
+
+## Security Controls
+
+Our security model follows a defense-in-depth strategy:
+
+1.  **Transport**: All internal services communicate over mTLS.
+2.  **Edge**: Arcjet provides WAF capabilities and bot protection.
+3.  **Application**: Strict RBAC implemented via Clerk and custom middleware.
+
+## Deployment Pipeline
+
+We utilize a GitOps workflow. Every commit to `main` triggers a build pipeline in GitHub Actions, which:
+
+1.  Runs unit and integration tests.
+2.  Builds Docker containers.
+3.  Deploys to our staging environment for E2E testing.

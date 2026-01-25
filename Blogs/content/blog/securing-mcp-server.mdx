@@ -1,0 +1,82 @@
+---
+title: Securing the Model Context Protocol (MCP) Server
+description: How we hardened our MCP server implementation with secure transport, authentication, and Pinecone vector database integration.
+date: 2026-01-18
+author: FairArena Engineering
+image: https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&h=630&fit=crop
+tags: [Security, MCP, DIY, Backend]
+---
+
+## The Challenge
+
+Building an MCP (Model Context Protocol) server that is both functional and production-grade secure is a nuanced engineering challenge. At FairArena, our goal was to provide a robust interface for our AI agents to interact with our infrastructure, but we quickly realized that the default `stdio` transport mechanism was insufficient for a distributed production environment.
+
+We needed a system that could:
+
+1.  Scalably handle concurrent requests from multiple agents.
+2.  Securely manage sensitive credentials for third-party services like Pinecone and Google Gemini.
+3.  expose a verifiable API surface that could be audited and rate-limited.
+
+This post details our journey from a local development prototype to a hardened, secure MCP server deployment.
+
+## Moving to HTTP/SSE Transport
+
+The standard `stdio` transport is excellent for local tool chaining but fails in a microservices architecture. To solve this, we refactored our server entry point to use `express` and `EventSource` for Server-Sent Events (SSE). This transition allows our MCP server to behave like a standard HTTP service, capable of being deployed behind load balancers and reverse proxies.
+
+```typescript
+// Simplified secure server entry point
+import express from 'express';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+
+const app = express();
+const server = new McpServer({
+  name: 'fairarena-mcp',
+  version: '1.0.0',
+});
+
+// Implementation details for tool registration...
+
+app.get('/sse', async (req, res) => {
+  const transport = new SSEServerTransport('/messages', res);
+  await server.connect(transport);
+});
+
+app.listen(3000);
+```
+
+### Security Benefits of HTTP
+
+By moving to HTTP, we immediately gained access to the mature ecosystem of web security tools. We placed the MCP server behind **Nginx**, allowing us to implement TLS termination, request logging, and IP allowlisting without writing custom code in the MCP layer.
+
+## Integrating Pinecone Safely
+
+One of our core capabilities is the "Search Documentation" tool, which queries a Pinecone vector database to retrieve context. This integration posed two specific problems: dimension mismatches and credential exposure.
+
+![Pinecone Architecture](https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&h=400&fit=crop)
+
+### Handling Vector Dimensions
+
+We initially encountered `PineconeBadRequestError` due to a mismatch between our embedding model (defaulting to 1536 dimensions) and our existing Pinecone index (optimized for 384 dimensions).
+
+The fix required strict enforcement of the embedding model configuration on the server side to ensure it matched the index schema.
+
+```typescript
+// Ensuring correct embedding dimensions
+const embedding = await generateEmbedding(text, {
+  model: 'all-MiniLM-L6-v2', // generates 384-dim vectors
+  dimensions: 384,
+});
+```
+
+### Credential Guardrails
+
+Crucially, **we do not expose Pinecone credentials to the client**. The client (the AI agent) simply requests "search these docs for X," and the server handles the authentication with Pinecone internally. This Proxy pattern is essential for security; it means that even if a client is compromised, our database credentials remain secure on the backend.
+
+## Authorization and API Keys
+
+To prevent unauthorized usage, we implemented a custom authorization middleware. While Pinecone keys are server-side, we allow clients to bring their own Google Gemini API keys. These are passed securely via custom HTTP headers (`X-Gemini-Key`), which the MCP server extracts and uses _only_ for that specific request scope, ensuring no cross-contamination between users.
+
+## Conclusion
+
+Securing an MCP server is about applying standard backend security practices—transport encryption, credential isolation, and input validation—to this new protocol. By treating our MCP server as a critical microservice rather than just a local script, we've built a foundation that is scalable, secure, and ready for enterprise workloads.

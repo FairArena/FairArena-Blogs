@@ -63,13 +63,13 @@
 
 <!-- Update this table to reflect the technologies used in your project -->
 
-| Category | Technology | Description |
-|----------|------------|-------------|
-| **Frontend** | [e.g. React] | [e.g. UI Library] |
-| **Backend** | [e.g. Node.js] | [e.g. Server Runtime] |
-| **Database** | [e.g. PostgreSQL] | [e.g. Main Database] |
-| **Styling** | [e.g. Tailwind CSS] | [e.g. Styling Framework] |
-| **DevOps** | [e.g. Docker] | [e.g. Containerization] |
+| Category     | Technology          | Description              |
+| ------------ | ------------------- | ------------------------ |
+| **Frontend** | [e.g. React]        | [e.g. UI Library]        |
+| **Backend**  | [e.g. Node.js]      | [e.g. Server Runtime]    |
+| **Database** | [e.g. PostgreSQL]   | [e.g. Main Database]     |
+| **Styling**  | [e.g. Tailwind CSS] | [e.g. Styling Framework] |
+| **DevOps**   | [e.g. Docker]       | [e.g. Containerization]  |
 
 ---
 
@@ -86,12 +86,14 @@
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone [your-repo-url]
    cd [project-folder-name]
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
@@ -99,12 +101,13 @@
 3. **Environment Configuration**
 
    Create `.env` files based on the provided examples:
+
    ```bash
    cp Backend/.env.example Backend/.env
    cp Frontend/.env.example Frontend/.env.local
    ```
 
-   *Update the created `.env` files with your specific configuration values.*
+   _Update the created `.env` files with your specific configuration values._
 
 4. **Database Setup**
    ```bash
@@ -117,12 +120,14 @@
 You can start the services using the following commands:
 
 **Backend Server**
+
 ```bash
 cd Backend
 pnpm dev
 ```
 
 **Frontend Application**
+
 ```bash
 cd Frontend
 pnpm dev

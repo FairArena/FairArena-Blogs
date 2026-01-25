@@ -1,0 +1,58 @@
+---
+title: A Type-Safe Notification System
+description: How we used TypeScript enums and strict typing to eliminate runtime errors in our notification infrastructure.
+date: 2026-01-16
+author: FairArena Engineering
+image: https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop
+tags: [TypeScript, Engineering, Backend, Notifications]
+---
+
+## The "Undefined" Trap
+
+In a complex event-driven system, notifications are often fired from everywhere: backend jobs, user actions, system alerts. Initially, our notification payload was a loose JSON object. This flexibility was great for rapid prototyping but terrible for stability.
+
+We started seeing runtime errors like:
+
+> `Error: type 'string | null' is not assignable to type 'string | undefined'`
+
+or logic bugs where a "SECURITY" alert was treated as a generic "INFO" message because of a typo in the type string.
+
+## Enforcing Strictness
+
+We decided to lock it down. The first step was defining a strict `NotificationType` enum.
+
+```typescript
+// src/generated/enums.ts
+export enum NotificationType {
+  INFO = 'INFO',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+  SECURITY = 'SECURITY', // The missing piece!
+}
+```
+
+By centralizing this definition, we ensured that every part of the codebase agreed on what a "SECURITY" notification was.
+
+![Code Analysis](https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=400&fit=crop)
+
+### Handling Null vs Undefined
+
+TypeScript is notoriously pedantic about `null` vs `undefined`. Our database layer (Prisma) often returns `null` for optional fields, while our frontend components expected `undefined` for missing props.
+
+We implemented a transformation layer in our `createNotification` function to normalize these values.
+
+```typescript
+function normalizePayload(payload: DatabasePayload): NotificationProps {
+  return {
+    ...payload,
+    description: payload.description ?? undefined, // Convert null to undefined
+    actionUrl: payload.actionUrl ?? undefined,
+  };
+}
+```
+
+## The Result
+
+The impact was immediate. The number of strict type errors in our compilation log dropped to zero, and more importantly, our notification system became predictable. Developers now get autocomplete when dispatching events, and invalid payloads are caught at build time, not in production logs.
+
+Strict typing is not just about avoiding red squigglies in VS Code; it's about encoding your business logic into the very structure of your code.

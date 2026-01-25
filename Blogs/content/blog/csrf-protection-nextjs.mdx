@@ -1,0 +1,55 @@
+---
+title: Robust CSRF Protection
+description: How we secured our authentication flows against Cross-Site Request Forgery (CSRF) attacks without compromising user experience.
+date: 2026-01-14
+author: FairArena Security Team
+image: https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=1200&h=630&fit=crop
+tags: [Security, Next.js, CSRF, Backend]
+---
+
+## The Vulnerability
+
+Cross-Site Request Forgery (CSRF) is a perennial threat for web applications. It allows an attacker to trick a user into executing unwanted actions on a web application where they are currently authenticated. At FairArena, as we scaled our enterprise features, we noticed gaps in our CSRF defenses, particularly within our intricate auth flows.
+
+We initially relied on exempting numerous routes from CSRF checks to "get things working," a classic mistake that accumulates technical debt and security risk.
+
+## The Solution: A Dedicated Token Endpoint
+
+Instead of a patchwork of exemptions, we implemented a dedicated endpoint to issue CSRF tokens securely.
+
+### Backend Implementation
+
+We created a new route at `/api/v1/auth/csrf`. This endpoint does one thing: it generates a cryptographically secure token and sets it as a `httpOnly` cookie, while also returning it in the response body for the client to include in headers.
+
+```typescript
+// Simplified CSRF Token Generation
+router.get('/csrf', (req, res) => {
+  const token = generateToken(req.session.id);
+  res.cookie('X-CSRF-Token', token, { httpOnly: true, secure: true });
+  res.json({ csrfToken: token });
+});
+```
+
+### Frontend Interceptor
+
+On the client side, we updated our Axios instance to be "CSRF-aware". Before making any state-changing request (POST, PUT, DELETE), the client checks for the existence of a valid token. If missing, it proactively fetches a new one.
+
+```typescript
+apiClient.interceptors.request.use(async (config) => {
+  if (config.method !== 'get' && !hasValidCsrfToken()) {
+    const { csrfToken } = await fetchCsrfToken();
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
+  return config;
+});
+```
+
+![Security Architecture](https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=800&h=400&fit=crop)
+
+## Handling Edge Cases
+
+The trickiest part was handling "cold" starts—like when a user clicks a verification email link. In these cases, the user has no session and no token. We implemented a "lazy" token generation strategy for public routes, ensuring that even unauthenticated users have a secure context for their initial interactions.
+
+## Conclusion
+
+Security is not a feature you can bolt on; it's a process. By standardizing our CSRF flow, we removed dozens of dangerous route exemptions and created a safer environment for our users.
