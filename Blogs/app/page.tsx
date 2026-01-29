@@ -20,7 +20,7 @@ export default function BlogListPage() {
         {/* Banner Background */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://fairarena.blob.core.windows.net/fairarena/FairArena-Blogs-Header-Bg"
+            src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9b8900002523674f/view?project=69735edc00127d2033d8&mode=admin"
             alt="Background"
             className="w-full h-full object-cover"
           />
