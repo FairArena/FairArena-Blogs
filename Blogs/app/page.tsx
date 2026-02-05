@@ -1,5 +1,6 @@
 import { BlogCard } from '@/components/blog-card';
 import { blogSource } from '@/lib/source';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'FairArena Blogs',
@@ -19,9 +20,11 @@ export default function BlogListPage() {
       <section className="relative overflow-hidden pt-32 pb-24 sm:pt-48 sm:pb-32 border-b border-fd-border bg-fd-card/50">
         {/* Banner Background */}
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9b8900002523674f/view?project=69735edc00127d2033d8&mode=admin"
             alt="Background"
+            width={1920}
+            height={1080}
             className="w-full h-full object-cover"
           />
         </div>

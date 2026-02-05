@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 
 // Defined based on source.config.ts schema
@@ -30,7 +31,9 @@ export function BlogCard({ post, index }: { post: BlogPost; index: number }) {
       >
         <div className="relative aspect-[16/9] overflow-hidden">
           {post.data.image ? (
-            <img
+            <Image
+              width={1920}
+              height={1080}
               src={post.data.image}
               alt={post.data.title}
               className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"

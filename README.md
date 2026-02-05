@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" width="140" height="140">
+  <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena Logo" width="140" height="140">
 </p>
 
 ---
@@ -35,6 +35,7 @@
 **FairArena-Blogs** is the official engineering blog repository for FairArena, a modern full-stack platform for fair and transparent skill assessment. This repository houses our technical content platform built with Next.js 15, showcasing our journey building a production-grade assessment platform.
 
 The blog serves as a knowledge hub where we share:
+
 - **Architecture decisions** and technical deep dives
 - **Engineering challenges** and how we solve them
 - **Best practices** from building scalable systems
@@ -59,18 +60,18 @@ Built with performance, SEO, and developer experience in mind, this blog demonst
 
 ## 🛠 Tech Stack
 
-| Category         | Technology      | Description                              |
-| ---------------- | --------------- | ---------------------------------------- |
-| **Framework**    | Next.js 15      | App Router & React Server Components    |
-| **Styling**      | Tailwind CSS v4 | Utility-first CSS framework              |
-| **UI Components** | Shadcn UI      | Customizable component library           |
-| **Content**      | Fumadocs MDX    | Type-safe Markdown processing & routing  |
-| **Images**       | Next.js Image   | Optimized image delivery & transformation |
-| **Language**     | TypeScript      | Strict type safety throughout            |
-| **Linting**      | ESLint          | Code quality and consistency             |
-| **Formatting**   | Prettier        | Automated code formatting                |
-| **Git Hooks**    | Husky           | Pre-commit quality checks                |
-| **Package Manager** | pnpm         | Fast, disk space efficient package manager |
+| Category            | Technology      | Description                                |
+| ------------------- | --------------- | ------------------------------------------ |
+| **Framework**       | Next.js 15      | App Router & React Server Components       |
+| **Styling**         | Tailwind CSS v4 | Utility-first CSS framework                |
+| **UI Components**   | Shadcn UI       | Customizable component library             |
+| **Content**         | Fumadocs MDX    | Type-safe Markdown processing & routing    |
+| **Images**          | Next.js Image   | Optimized image delivery & transformation  |
+| **Language**        | TypeScript      | Strict type safety throughout              |
+| **Linting**         | ESLint          | Code quality and consistency               |
+| **Formatting**      | Prettier        | Automated code formatting                  |
+| **Git Hooks**       | Husky           | Pre-commit quality checks                  |
+| **Package Manager** | pnpm            | Fast, disk space efficient package manager |
 
 ---
 
@@ -183,8 +184,8 @@ To create a new blog post:
 
    ```mdx
    ---
-   title: "Your Blog Post Title"
-   description: "A concise description of your post"
+   title: 'Your Blog Post Title'
+   description: 'A concise description of your post'
    date: 2026-01-25
    authors:
      - name: Your Name
@@ -239,7 +240,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 
 **FairArena Engineering Team**
 
-- 🌐 Website: [https://fair.sakshamg.me](https://fair.sakshamg.me)
+- 🌐 Website: [https://fairarena.app](https://fairarena.app)
 - 💻 GitHub: [@FairArena](https://github.com/FairArena)
 - 📧 Email: contact@fairarena.com
 

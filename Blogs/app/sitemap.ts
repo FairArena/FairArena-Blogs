@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPages = blogSource.getPages().map((page) => ({
-    url: `https://blog.fair.sakshamg.me/blog/${page.slugs.join('/')}`,
+    url: `https://blog.fairarena.app/blog/${page.slugs.join('/')}`,
     lastModified: page.data.date ? new Date(page.data.date) : new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: 'https://blog.fair.sakshamg.me',
+      url: 'https://blog.fairarena.app',
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,

@@ -15,6 +15,10 @@ const config = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'fra.cloud.appwrite.io',
+      },
     ],
   },
   async rewrites() {

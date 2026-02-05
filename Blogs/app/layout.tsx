@@ -3,13 +3,15 @@ import { RootProvider } from 'fumadocs-ui/provider/next';
 import { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './global.css';
+import Script from 'next/script';
+import Image from 'next/image';
 
 const font = Outfit({
   subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://blog.fair.sakshamg.me'),
+  metadataBase: new URL('https://blog.fairarena.app'),
   title: {
     template: '%s | FairArena Blog',
     default: 'FairArena Engineering Blog',
@@ -17,13 +19,13 @@ export const metadata: Metadata = {
   description:
     'Technical insights, manufacturing updates, and engineering deep dives from the team building FairArena.',
   openGraph: {
-    url: 'https://blog.fair.sakshamg.me',
+    url: 'https://blog.fairarena.app',
     siteName: 'FairArena Blog',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+        url: 'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
         width: 1200,
         height: 630,
         alt: 'FairArena Logo',
@@ -34,13 +36,17 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'FairArena Engineering Blog',
     description: 'Technical insights from the team building FairArena.',
-    images: ['https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png'],
+    images: [
+      'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
+    ],
     creator: '@FairArena',
   },
   icons: {
-    icon: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
-    shortcut: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
-    apple: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+    icon: 'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
+    shortcut:
+      'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
+    apple:
+      'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
   },
 };
 
@@ -54,12 +60,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             nav={{
               title: (
                 <div className="flex items-center gap-2">
-                  <img
-                    src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+                  <Image
+                    src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin"
                     alt="FairArena"
-                    className="w-8 h-8 object-contain dark:invert-0 invert"
+                    width={55}
+                    height={55}
+                    className="object-contain dark:invert-0 invert"
                   />
-                  <span className="font-bold">FairArena</span>
                 </div>
               ),
             }}
@@ -71,13 +78,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               },
               {
                 text: 'Docs',
-                url: 'https://docs.fair.sakshamg.me',
+                url: 'https://docs.fairarena.app',
               },
             ]}
           >
             {children}
           </HomeLayout>
         </RootProvider>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-R5HZ5FL5CN"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-R5HZ5FL5CN');
+          `}
+        </Script>
       </body>
     </html>
   );
