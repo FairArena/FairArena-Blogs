@@ -5,6 +5,7 @@ import { Outfit } from 'next/font/google';
 import './global.css';
 import Script from 'next/script';
 import Image from 'next/image';
+import Footer from '@/components/Footer';
 
 const font = Outfit({
   subsets: ['latin'],
@@ -83,6 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ]}
           >
             {children}
+            <Footer />
           </HomeLayout>
         </RootProvider>
         <Script
