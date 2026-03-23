@@ -6,6 +6,7 @@ import './global.css';
 import Script from 'next/script';
 import Image from 'next/image';
 import Footer from '@/components/Footer';
+import { Rss } from 'lucide-react';
 
 const font = Outfit({
   subsets: ['latin'],
@@ -49,12 +50,17 @@ export const metadata: Metadata = {
     apple:
       'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
   },
+  alternates: {
+    types: {
+      'application/rss+xml': '/rss.xml',
+    },
+  },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={font.className} suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen" suppressHydrationWarning>
         <RootProvider>
           <HomeLayout
             githubUrl="https://github.com/FairArena"
@@ -80,6 +86,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {
                 text: 'Docs',
                 url: 'https://docs.fairarena.app',
+              },
+              {
+                text: (<> <Rss className="inline-block mr-2" /> RSS Feed</>) as any,
+                url: '/rss.xml',
               },
             ]}
           >

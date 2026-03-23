@@ -1,0 +1,216 @@
+---
+title: "Multi-Round Judging: Why Screening → Deep Dive → Deliberation Works"
+description: "Learn how multi-round judging improves decision quality, reduces judge fatigue, and increases fairness in competitive evaluations."
+date: "2026-03-23"
+author: "FairArena"
+tags: ["judging", "multi-round", "screening", "fairness"]
+image: "https://picsum.photos/seed/multi-round-judging/1200/630"
+---
+
+# Multi-Round Judging: The Structure That Ensures Quality Decisions
+
+Imagine asking 20 judges to evaluate 100 projects in one go.
+
+**What happens:**
+- Judges rush through projects (judge fatigue)
+- Early judgments influence later ones (anchoring bias)
+- Great projects get overlooked if they're unlucky to be #87 (recency bias)
+- All 100 projects judged equally, even though only 5 are competitive
+
+**This is inefficient and poor decision-making.**
+
+**Multi-round judging** is better. You screen projects through multiple phases, reducing load and improving quality with each round.
+
+## The Multi-Round Model
+
+### **Round 1: Screening / Triage**
+- **Goal**: Quick pass/fail; eliminate obvious non-starters
+- **Judge count**: All judges (or a smaller screening committee)
+- **Per-project time**: 5-10 minutes
+- **Rubric**: Simplified (2-3 criteria: Does it fit our criteria? Is it feasible?)
+- **Decision**: Top 20-30% advance
+
+### **Round 2: Deep Evaluation**
+- **Goal**: Serious evaluation of competitive projects
+- **Judge count**: Specialty judges (match judge expertise to project category)
+- **Per-project time**: 30-45 minutes
+- **Rubric**: Full rubric (4-6 criteria with detailed scoring)
+- **Decision**: Top 5-10 advance to finals
+
+### **Round 3: Deliberation / Finals**
+- **Goal**: Leadership discusses finalists; make final selection
+- **Judge count**: Small panel (3-5 decision-makers)
+- **Per-project time**: 1-2 hours of deep discussion
+- **Rubric**: Context-aware (understanding of trade-offs, strategic fit)
+- **Decision**: Select winners
+
+## Why Multi-Round Works Better
+
+### **Reduces Judge Fatigue**
+- Round 1: Quick screening (each judge ~2 hours total)
+- Round 2: Deep evaluation of smaller pool (each judge ~3-4 hours)
+- Round 3: Leadership deliberation (select group, ~2-3 hours)
+- **Total**: Reasonable time commitment vs. asking everyone to evaluate 100 projects for 8 hours
+
+### **Improves Quality**
+- Round 1 eliminates obvious non-starters → judges don't waste time on those
+- Round 2 goes deep on competitive projects → serious evaluation
+- Round 3 allows deliberation → wisdom of crowd, nuanced understanding
+
+### **Reduces Biases**
+- Round 1 uses unanimous screening (eliminates outliers)
+- Round 2 uses multiple evaluators per project
+- Round 3 uses discussion (flags are discussed openly)
+
+### **Increases Transparency**
+- Participants understand the process
+- They know projects were evaluated multiple times
+- They see clear advancement criteria at each stage
+
+## Real Example: Hackathon with 150 Projects
+
+**Round 1 (Screening, 1 day)**
+- All 15 judges receive simple rubric
+- Each judge evaluates all 150 projects quickly (5-10 min each)
+- Criteria: Does this solve a problem? Is it technically feasible?
+- Judges' consensus: Top 40 projects advance (27%)
+- Eliminated: 110 projects that aren't competitive
+
+**Round 2 (Deep Dive, 1 week)**
+- 15 judges assigned 40 projects (3 judges per project)
+- Full rubric: Innovation, feasibility, impact, design, presentation
+- Dedicated time (40 projects × 30 min × 3 judges = 60 hours total)
+- Judges' verdict: Top 10 projects advance
+- Eliminated: 30 projects that had promise but don't compare to finalists
+
+**Round 3 (Finals, 1 day)**
+- 5 senior judges review top 10 projects in depth
+- Panel discussion: "Why is Project A better than Project B?"
+- Public presentation + judging if live event
+- Winners announced
+
+**Result**: High-quality decision, reasonable judge time, transparent process.
+
+## Variant: Rolling Scores (Majority Consensus Model)
+
+Instead of strict cutoffs, some competitions use rolling advancement:
+
+- **Round 1**: Projects scored 1-10; all scoring 7+ auto-advance
+- **Round 2**: Remaining projects scored 1-10; all scoring 8+ auto-advance
+- **Round 3**: Remaining projects discussed; judging room decides top 3
+
+**Advantage**: No arbitrary cutoffs. Advancement based on actual score.
+
+## Variant: Single-Blind Multi-Round
+
+Combine blind review + multi-round:
+
+- **Round 1 (Blind)**: Judges evaluate anonymously; projects screened
+- **Round 2 (Blind)**: Smart judges evaluate; projects deep-reviewed
+- **Round 3 (Unblind)**: Identities revealed; deliberation with full context
+- **Result**: Fair initial evaluation + strategic deliberation with all info
+
+**Why this works**: Early bias is removed; final decision is informed.
+
+## Variant: Bracket-Style Competition
+
+Project elimination tournament style:
+
+- **Round 1**: 64 projects → 32 winners (head-to-head comparison)
+- **Round 2**: 32 projects → 16 winners
+- **Round 3**: 16 projects → 8 winners
+- **Round 4**: 8 → 4  (semi-finals)
+- **Round 5**: 4 → 2 (finals)
+- **Finals**: Best of best
+
+**Great for**: Live events, spectator engagement, clarity of competition
+**Challenge**: Requires head-to-head judging (not all competitions support this)
+
+## Designing Your Multi-Round Process
+
+### Step 1: Know Your Volume
+- 10-50 projects? May not need multi-round; single elimination with good rubric is fine
+- 50-200 projects? Definitely use multi-round
+- 200+ projects? 3+ rounds essential
+
+### Step 2: Define Your Rounds
+- **What's the goal of each round?** (screening vs. deep evaluation vs. strategy)
+- **How many judges per round?** (all vs. experts)
+- **What rubric?** (simple vs. full)
+- **Advancement criteria?** (top X%, score threshold, unanimous consensus)
+
+### Step 3: Set Timelines
+- Give judges enough time per round, but don't drag it out
+- Multi-round over 3-4 weeks works well (not too rushed, not eternal)
+- Communicate timeline upfront to judges
+
+### Step 4: Train Judges on the Process
+- "Here's Round 1: quick screening, 5-10 min per project"
+- "Here's Round 2: deep dive, 30-45 min per project"
+- "Here's Round 3: we discuss as a panel"
+- Set expectations clearly
+
+### Step 5: Implement in Software
+- Use a platform that supports multi-round workflows
+- Automate project advancement
+- Auto-calculate averages and determine who advances
+- Judges see clearly "You're evaluating these 40 projects for the Final Round"
+
+## When Single-Round Judging Is Okay
+
+- **< 20 projects**: Everyone evaluates everyone; single round is fine
+- **Simple evaluation**: Pass/fail only (e.g., "meets eligibility")
+- **Trusted judges**: Small group who understands the domain deeply
+- **Community voting**: Participants vote; not judges + deliberation needed
+
+## Pitfalls to Avoid
+
+### **Pitfall 1: Unclear advancement criteria**
+- Don't just say "best projects advance"
+- Say "Top 20% of projects, based on average score of 7+, advance to round 2"
+- Be specific; be transparent
+
+### **Pitfall 2: Inconsistent evaluation**
+- Round 1 judges use different rubrics
+- Result: Inconsistent advancement; trust lost
+- **Fix**: Same rubric across all judges in a round
+
+### **Pitfall 3: Judge overlaps confuse learning**
+- Judge sees a project scored 6/10 by Round 1; doesn't revisit in Round 2
+- **Fix**: Round 2 judges are fresh reviewers (unless you want consistency)
+
+### **Pitfall 4: Too many rounds (analysis paralysis)**
+- 5+ rounds means endless judging
+- You need clear advancement criteria so evaluation doesn't drag
+- **Best practice**: 2-3 rounds for most competitions
+
+### **Pitfall 5: Feedback doesn't improve**
+- Round 1 is quick screening; judges don't provide feedback
+- Participants advance to Round 2 but don't know why or what to improve
+- **Fix**: Even in Round 1, collect one sentence of feedback per project
+
+## Reporting & Transparency
+
+After multi-round judging, show participants:
+- "Your project advanced Round 1 (qualified score: 7.2/10)"
+- "Your project was not selected in Round 2 (average score: 6.8/10)"
+- "Feedback from judges: [qualitative comments]"
+- "You can reapply next year with refinements based on feedback"
+
+Transparency builds trust, even with losers.
+
+## Conclusion
+
+Single-round judging is fine for small events. For serious competitions (50+ projects), multi-round judging:
+- **Reduces fatigue**: Judges do focused, manageable work
+- **Improves quality**: Screening eliminates noise; deep dive focused on competitive projects
+- **Enables fairness**: Multiple judges per project; fewer biases
+- **Increases transparency**: Clear process, clear advancement criteria
+
+**Before your next competition, design your rounds:**
+- How many projects will you get?
+- When do you need decisions?
+- Which judges for which rounds?
+- What rubric for each round?
+
+Multi-round judging is the professional standard. It signals to participants and judges: "We take this seriously."

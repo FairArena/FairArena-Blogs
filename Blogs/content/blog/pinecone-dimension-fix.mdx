@@ -3,7 +3,7 @@ title: Solving the Pinecone Dimension Mismatch
 description: How we debugged and fixed vector embedding issues to enable accurate AI documentation search.
 date: 2026-01-18
 author: FairArena Engineering
-image: https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop
+image: https://picsum.photos/seed/pinecone-dimension-fix/1200/630
 tags: [AI, Vector DB, Debugging, Pinecone]
 ---
 
@@ -22,7 +22,7 @@ Our investigation revealed a drift in our pipeline configuration:
 1.  **The Index**: Our production Pinecone index was configured for **384 dimensions**, optimized for the `all-MiniLM-L6-v2` model which offers a great balance of speed and accuracy.
 2.  **The Pipeline**: Our new embedding generation service, in an attempt to be "modern," defaulted to OpenAI's `text-embedding-3-small` model, which generates **1536 dimensions**.
 
-![Vector Space Visualization](https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop)
+![Vector Space Visualization](https://picsum.photos/seed/pinecone-dimension-fix-visual/800/400)
 
 ## The Fix
 

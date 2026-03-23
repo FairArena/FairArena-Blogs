@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
+import { SmartImage } from './smart-image';
 import Link from 'next/link';
 
 // Defined based on source.config.ts schema
@@ -29,19 +29,19 @@ export function BlogCard({ post, index }: { post: BlogPost; index: number }) {
         href={post.url}
         className="flex flex-col h-full bg-fd-card border border-fd-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-fd-primary/50 hover:shadow-lg hover:-translate-y-1"
       >
-        <div className="relative aspect-[16/9] overflow-hidden">
+        <div className="relative aspect-video overflow-hidden">
           {post.data.image ? (
-            <Image
-              width={1920}
-              height={1080}
+            <SmartImage
+              fill
               src={post.data.image}
               alt={post.data.title}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full bg-linear-to-br from-fd-muted to-fd-background" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-fd-card/90 via-transparent to-transparent opacity-60" />
+          <div className="absolute inset-0 bg-linear-to-t from-fd-card/90 via-transparent to-transparent opacity-60" />
 
           {/* Tags Overylay */}
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">

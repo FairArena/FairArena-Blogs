@@ -1,0 +1,257 @@
+---
+title: "How to Assign Reviewers to Projects Fairly"
+description: "Learn systematic methods for assigning judges/reviewers to projects based on expertise, availability, and managing conflicts of interest."
+date: "2026-03-23"
+author: "FairArena"
+tags: ["reviewer assignment", "workflow", "judging process", "guide"]
+image: "https://picsum.photos/seed/how-to-assign-reviewers/1200/630"
+---
+
+# How to Assign Reviewers to Projects: Fair & Efficient Methods
+
+You have 50 projects and 15 judges. Rule: Each project gets evaluated by 3 judges.
+
+**The questions:**
+- Which judges evaluate which projects?
+- How do you balance workload?
+- What if a judge knows the project creator?
+- How do you ensure specialized judges review specialized projects?
+
+Manual assignment = error-prone mess. Here's how to do it systematically.
+
+## Method 1: Round-Robin (Simple, Fair)
+
+**Process:**
+1. Create a list of projects (Project 1-50)
+2. Create a list of judges (Judge A-15)
+3. For each project, assign judges sequentially
+   - Project 1 → Judges A, B, C
+   - Project 2 → Judges D, E, F
+   - Project 3 → Judges G, H, I
+   - Project 4 → Judges J, K, L
+   - Project 5 → Judges M, N, A (wrap around)
+   - ...repeat
+
+**Advantages:**
+- Simple to execute
+- Workload distributed equally
+- No bias
+
+**Disadvantages:**
+- Ignores expertise matching
+- Doesn't account for conflicts
+
+**Best for:**
+- Homogeneous projects (all similar)
+- When expertise doesn't matter much
+- Quick events with low stakes
+
+## Method 2: Expertise-Based Assignment
+
+**Process:**
+1. **Categorize projects** (e.g., Web, Mobile, AI/ML, Hardware, Design)
+2. **Categorize judges** (rank expertise in each area)
+3. **Assign judges by expertise**
+   - Web projects → Web-expert judges
+   - AI projects → AI-expert judges
+   - etc.
+
+**Example:**
+- Project: "ML-based recommendation engine" → Assigned to: Judge-AI-1, Judge-AI-2, Judge-Backend-1
+- Project: "Mobile workout app" → Assigned to: Judge-Mobile-1, Judge-Mobile-2, Judge-UX-1
+
+**Advantages:**
+- Judges evaluate projects they understand
+- Higher evaluation quality
+- Judge satisfaction (judging their specialty)
+
+**Disadvantages:**
+- Unequal workload if expertise is skewed
+- Requires pre-categorization
+
+**Best for:**
+- Specialized competitions (hackathons with clear tracks)
+- Grant programs (different judges for different research areas)
+- Technical events
+
+## Method 3: Balanced + Expertise
+
+**Process:**
+1. Categorize projects by track
+2. Categorize judges by expertise
+3. Within each track, distribute judges evenly
+4. Ensure each judge gets a balanced mix
+
+**Example (3 judges per project, 4 tracks, 12 judges):**
+- Track 1 (Web): 12 projects
+  - 3 web-expert judges
+  - + 1 general judge per project
+  - = 4 judges per project (1 each from 4 people on rotation)
+  
+Result: Web-experts handle all web projects; workload shared; each judge sees variety
+
+**Advantages:**
+- Balanced expertise + workload
+- Higher quality evaluation
+- Fair judge assignment
+
+**Disadvantages:**
+- More complex to track
+- Requires thoughtful setup
+
+**Best for:**
+- Most competitions (good balance)
+
+## Method 4: Conflict-Aware Assignment
+
+**Process:**
+1. Create "conflict matrix": Who knows whom? (Judge vs. Project team)
+2. Assign judges to projects EXCEPT where conflicts exist
+3. Use overflow judges for conflict cases
+
+**Example:**
+- Judge Smith works at Company X
+- Project "X Corp internal tool" is submitted by Company X employees
+- **Conflict**: Judge Smith can't judge this project
+- **Resolution**: Use Judge Jones instead (no conflict)
+
+**Advantages:**
+- Prevents bias
+- Legally defensible
+
+**Disadvantages:**
+- Requires upfront conflict declaration
+- Can create assignment bottlenecks
+
+**Best for:**
+- High-stakes competitions (grants, awards)
+- Internal competitions (need appearance of fairness)
+- Biased evaluation situations
+
+## The Complete Framework: Multi-Method
+
+**Step 1: Collect Judge Preferences**
+- Email judges: "What types of projects can you judge? What are your conflicts?"
+- Collect: expertise areas, conflicts of interest, availability
+
+**Step 2: Categorize Projects**
+- Review submissions; bucket by category/track
+- Example: Web (20), Mobile (15), AI (10), Design (5)
+
+**Step 3: Assign**
+- Start with expertise matching
+- Within each category, use round-robin for balance
+- Remove any conflicts
+- Verify: no judge overloaded, good balance
+
+**Step 4: Verify Fairness**
+- Check: Is judge workload balanced? (nobody has 15 projects when others have 5)
+- Check: Does each project have diverse experts? (not all 3 judges from one company)
+- Check: Are conflicts handled? (no judge + project creator combo)
+
+**Step 5: Communicate**
+- Email judges: "You're assigned to evaluate these X projects by [DATE]"
+- Show: Project titles, submission links, rubric
+- Confirm: Conflicts? Availability issues?
+
+## Using Software to Automate
+
+Most judging platforms handle assignment automatically:
+
+**Features enabled by software:**
+- Upload judge list + expertise + conflicts
+- Upload project list + category
+- Platform auto-suggests optimal assignment
+- You review and accept or adjust
+- Email goes out to judges automatically
+
+**Platforms with good assignment algo:**
+- FairArena: Expertise-based + conflict management
+- Submittable: Conflict management + workload balancing
+- OpenWater: Complex constraint solving
+
+**Result**: What takes 2 hours manually takes 5 minutes with software.
+
+## Practical Tips
+
+### Tip 1: Avoid Single-Judge Projects
+- Never assign only 1 judge per project
+- Minimum 2-3 judges provides redundancy
+- Reduces individual judge bias
+
+### Tip 2: Judge Diversity
+- Avoid all judges from same company/background
+- Mix expertise, experience level, demographics
+- Improves fairness
+
+### Tip 3: Pilot Test
+-Before assigning all projects, test with 5-10
+- See if judges can find projects in the system
+- Make sure they understand the workflow
+- Adjust before full rollout
+
+### Tip 4: Double-Check Conflicts
+- Don't assume you know conflicts
+- Explicitly ask judges: "Do you know anyone in these projects?"
+- Document in writing
+
+### Tip 5: Publish Assignments Transparently
+- Ideally, participants see judge assignments
+- Builds trust: "Here's who's evaluating me"
+- Prevents claims of bias
+
+## Workload Balancing Example
+
+**Scenario: 50 projects, 15 judges, 3 judges per project = 150 judge-assignments**
+
+**Fair distribution:**
+- Each judge gets 150 ÷ 15 = 10 projects to evaluate
+
+**Example assignments:**
+- Judge A: 10 projects
+- Judge B: 10 projects
+- Judge C: 9 projects (one assignment less due to conflict)
+- ...
+- Judge O: 10 projects
+
+Software should track this automatically.
+
+## Red Flags: When Assignment Went Wrong
+
+- **Big workload disparity**: Some judges have 15 projects, others have 5 → demotivating
+- **Specialty mismatch**: AI judge assigned to web projects → Low quality evaluation
+- **Visible conflicts**: Judge knows project creator but still assigned → Unfair appearance  
+- **Groupthink**: All 3 judges for a project from same company → Bias risk
+
+## Common Tools / Methods
+
+### Manual (Spreadsheet)
+- Creates a matrix: Projects (rows) × Judges (columns)
+- Check boxes to assign
+- Slow, error-prone, not recommended
+
+### Semi-Automatic (Platform + Manual Tweaking)
+- Platform suggests assignments
+- You review and make adjustments
+- ~30 min of work
+- Recommended
+
+### Fully Automatic (AI-powered)
+- Platform solves assignment as optimization problem
+- Balances expertise, workload, conflicts simultaneously
+- 5 min of work
+- Best practice
+
+## Conclusion
+
+Assigning reviewers fairly is critical to competition credibility. Use this framework:
+
+1. **Collect preferences**: Ask judges about expertise and conflicts
+2. **Match expertise**: Assign judges to projects they understand
+3. **Balance workload**: No judge overwhelmed or underutilized
+4. **Handle conflicts**: Identify and prevent bias situations
+5. **Verify and communicate**: Double-check, then notify judges
+
+For 50+ projects, use software to automate this. Manual assignment wastes time and introduces errors.
+
+**Today**: Review your last competition's judge assignments. Would you do anything differently? Use those learnings for your next event.
