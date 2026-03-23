@@ -11,6 +11,13 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
+  // lastModified may be available directly or via lazy load
+  let lastModified: Date | undefined = (page.data as any).lastModified;
+  if (!lastModified && typeof (page.data as any).load === 'function') {
+    const loaded = await (page.data as any).load();
+    lastModified = loaded?.lastModified;
+  }
+
   const MDX = page.data.body;
   const gitConfig = {
     user: 'username',
@@ -22,6 +29,9 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
     <DocsPage toc={page.data.toc} full={page.data.full}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
+      {lastModified && (
+        <div className="text-sm text-fd-muted-foreground mb-4">Updated {new Date(lastModified).toLocaleDateString(undefined, { dateStyle: 'long' })}</div>
+      )}
       <div className="flex flex-row gap-2 items-center border-b pb-6">
         <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
         <ViewOptions

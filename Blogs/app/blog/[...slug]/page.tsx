@@ -14,6 +14,13 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
   const page = blogSource.getPage(params.slug);
   if (!page) notFound();
 
+  // lastModified may be available directly or via lazy load
+  let lastModified: Date | undefined = (page.data as any).lastModified;
+  if (!lastModified && typeof (page.data as any).load === 'function') {
+    const loaded = await (page.data as any).load();
+    lastModified = loaded?.lastModified;
+  }
+
   const MDX = page.data.body;
 
   return (
@@ -51,6 +58,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   <Calendar size={16} className="text-fd-primary" />
                   <time dateTime={new Date(page.data.date).toISOString()}>
                     {new Date(page.data.date).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                  </time>
+                </div>
+              )}
+              {lastModified && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-fd-muted-foreground">Updated</span>
+                  <time dateTime={new Date(lastModified).toISOString()} className="text-sm">
+                    {new Date(lastModified).toLocaleDateString(undefined, { dateStyle: 'long' })}
                   </time>
                 </div>
               )}
