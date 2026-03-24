@@ -8,29 +8,33 @@ export async function GET() {
 
   // Sort by date, newest first
   const posts = allPosts.sort((a, b) => {
-    const dateA = new Date(a.frontmatter?.date || 0).getTime();
-    const dateB = new Date(b.frontmatter?.date || 0).getTime();
+    const dateA = new Date((a.date as string) || 0).getTime();
+    const dateB = new Date((b.date as string) || 0).getTime();
     return dateB - dateA;
   });
 
   const rssItems = posts
     .map(
-      (post) => `
-  <item>
-    <title>${escapeXml(post.frontmatter?.title || '')}</title>
-    <description>${escapeXml(post.frontmatter?.description || '')}</description>
-    <link>${baseUrl}/blog/${post.slug}</link>
-    <guid>${baseUrl}/blog/${post.slug}</guid>
-    <pubDate>${new Date(post.frontmatter?.date || Date.now()).toUTCString()}</pubDate>
-    <author>FairArena</author>
-    <category>${post.frontmatter?.tags?.[0] || 'Blog'}</category>
-    ${post.frontmatter?.image ? `<image>
-      <url>${post.frontmatter.image}</url>
-      <title>${escapeXml(post.frontmatter.title || '')}</title>
-      <link>${baseUrl}/blog/${post.slug}</link>
-    </image>` : ''}
-  </item>
-`
+      (post) => {
+        const p: any = post as any;
+        const slug = p.slug || (p.slugs ? p.slugs.join('/') : '');
+        return `
+    <item>
+      <title>${escapeXml((p.title as string) || '')}</title>
+      <description>${escapeXml((p.description as string) || '')}</description>
+      <link>${baseUrl}/blog/${slug}</link>
+      <guid>${baseUrl}/blog/${slug}</guid>
+      <pubDate>${new Date((p.date as string) || Date.now()).toUTCString()}</pubDate>
+      <author>FairArena</author>
+      <category>${(p.tags as string[])?.[0] || 'Blog'}</category>
+      ${(p.image as string) ? `<image>
+        <url>${p.image}</url>
+        <title>${escapeXml((p.title as string) || '')}</title>
+        <link>${baseUrl}/blog/${slug}</link>
+      </image>` : ''}
+    </item>
+    `;
+      }
     )
     .join('');
 
