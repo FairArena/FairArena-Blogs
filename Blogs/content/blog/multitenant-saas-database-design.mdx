@@ -1,0 +1,378 @@
+---
+title: "How to Deploy a Multi-Tenant SaaS Database: Architecture Guide"
+description: "Learn multi-tenant SaaS database design: row-level security, schema isolation, data residency, and how to scale. Includes PostgreSQL examples."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["SaaS", "Database", "Architecture", "PostgreSQL", "MultiTenant", "2026"]
+keywords: ["multi-tenant SaaS database", "multi-tenant architecture", "PostgreSQL multi-tenant", "SaaS scaling database"]
+image: https://picsum.photos/seed/multitenant-db/1200/630
+---
+
+# How to Deploy a Multi-Tenant SaaS Database: Architecture Guide
+
+Multi-tenant databases are the foundation of SaaS. Multiple customers share the same database, but their data is isolated.
+
+This guide covers architecture patterns, security, and how to scale multi-tenant databases in 2026.
+
+## Single-Tenant vs. Multi-Tenant
+
+### Single-Tenant (One DB Per Customer)
+
+```
+Customer A → Database A
+Customer B → Database B
+Customer C → Database C
+```
+
+**Pros**: Complete isolation, easy compliance
+**Cons**: Expensive (DBs cost $), hard to scale, operational burden
+
+### Multi-Tenant (Shared Database)
+
+```
+Database
+├── Customer A data (rows with tenant_id = 'a')
+├── Customer B data (rows with tenant_id = 'b')
+└── Customer C data (rows with tenant_id = 'c')
+```
+
+**Pros**: Cost-efficient, easier scaling
+**Cons**: Complexity, security risks if mishandled
+
+## Multi-Tenant Database Design
+
+### Schema
+
+Add `tenant_id` to every table:
+
+```sql
+CREATE TABLE users (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(tenant_id, email)  -- Email unique per tenant, not globally
+);
+
+CREATE TABLE projects (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  created_by INT NOT NULL REFERENCES users(id),
+  
+  UNIQUE(tenant_id, name)  -- Name unique per tenant
+);
+
+CREATE TABLE tasks (
+  id BIGSERIAL PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  project_id INT NOT NULL REFERENCES projects(id),
+  title VARCHAR(255),
+  done BOOLEAN DEFAULT FALSE
+);
+
+-- Index for fast lookups
+CREATE INDEX idx_users_tenant ON users(tenant_id);
+CREATE INDEX idx_projects_tenant ON projects(tenant_id);
+CREATE INDEX idx_tasks_tenant ON tasks(tenant_id);
+```
+
+### Row-Level Security (PostgreSQL)
+
+Enforce data isolation at the database level:
+
+```sql
+-- Enable RLS
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only see their own tenant's data
+CREATE POLICY users_isolation ON users
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY users_insert ON users
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+-- Do the same for projects, tasks, etc.
+CREATE POLICY projects_isolation ON projects
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tasks_isolation ON tasks
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+```
+
+### Set Tenant Context (Per Request)
+
+In your application, set the tenant on every request:
+
+```typescript
+// Middleware
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+export const tenantMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token' });
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+  const tenantId = (decoded as any).tenant_id;
+
+  // Set tenant context for this request
+  req.app.locals.tenantId = tenantId;
+
+  // Tell PostgreSQL the current tenant
+  await db.query('SELECT set_config($1, $2, false)', [
+    'app.current_tenant_id',
+    tenantId
+  ]);
+
+  next();
+};
+```
+
+### Use in Queries
+
+```typescript
+// With RLS enabled, queries automatically filter by tenant
+const projects = await db.query('SELECT * FROM projects');
+// Only returns projects for app.current_tenant_id
+// RLS policy enforces this at DB level
+```
+
+## Isolating Tenants Data Physically
+
+For stricter isolation (compliance, data residency), use schema isolation:
+
+```sql
+-- Create schema per customer
+CREATE SCHEMA customer_a;
+CREATE SCHEMA customer_b;
+CREATE SCHEMA customer_c;
+
+-- Create tables in each schema
+CREATE TABLE customer_a.users (
+  id BIGSERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  ...
+);
+
+CREATE TABLE customer_b.users (
+  id BIGSERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  ...
+);
+```
+
+**Pros**: Complete physical isolation
+**Cons**: More schemas = complexity, harder to query across tenants
+
+## Data Residency (GDPR)
+
+Some regions require data to stay local (EU GDPR, India data laws).
+
+Solution: Separate databases per region:
+
+```typescript
+// Database selection based on region
+const getDatabase = (tenantRegion: string) => {
+  switch (tenantRegion) {
+    case 'EU':
+      return dbs.eu;  // PostgreSQL in Frankfurt
+    case 'APAC':
+      return dbs.apac;  // PostgreSQL in Singapore
+    default:
+      return dbs.us;  // PostgreSQL in us-east-1
+  }
+};
+
+// In your request handler
+const db = getDatabase(tenant.region);
+const user = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+```
+
+## Backup & Disaster Recovery
+
+With multi-tenant database, single point of failure = disaster.
+
+```sql
+-- Daily backups
+pg_dump mydb | gzip > backups/mydb-$(date +%Y%m%d).sql.gz
+
+-- Test restores regularly
+gunzip backups/mydb-20260406.sql.gz
+psql mydb < mydb-20260406.sql
+
+-- Or use managed backups
+-- AWS RDS: automatic backups, point-in-time restore
+-- Azure Database: automated backups to geo-replicated storage
+```
+
+## Scaling Multi-Tenant Databases
+
+### Read Replicas
+
+For read-heavy workloads:
+
+```typescript
+// Primary (write)
+const primary = db.write;
+
+// Replicas (read)
+const replica = db.read;
+
+// Write to primary
+await primary.query('INSERT INTO logs VALUES (...)');
+
+// Read from replica (slightly stale, but works)
+const logs = await replica.query('SELECT * FROM logs LIMIT 100');
+```
+
+### Sharding (Horizontal Partitioning)
+
+For very large databases, split by tenant:
+
+```
+Database 1: Tenants A–D
+Database 2: Tenants E–H
+Database 3: Tenants I–L
+...
+```
+
+Router determines which DB:
+
+```typescript
+const getTenantDatabase = (tenantId: string) => {
+  const hash = parseInt(tenantId.substring(0, 8), 16);
+  const shardIndex = hash % 3;  // 3 shards
+  return databases[shardIndex];
+};
+
+const db = getTenantDatabase(tenantId);
+const data = await db.query('SELECT *FROM projects');
+```
+
+**Pros**: Unlimited scale
+**Cons**: Complex, cross-tenant queries impossible, migrations hard
+
+## Security Checklist
+
+- [ ] Every table has `tenant_id`
+- [ ] RLS enabled on tenant-specific tables
+- [ ] Tenant context set before every query
+- [ ] No queries without tenant filter
+- [ ] Backups encrypted
+- [ ] Access logs monitored
+- [ ] Data deletion cascades (deleting tenant = deleting all its data)
+
+## Example: Multi-Tenant App (Next.js)
+
+```typescript
+// lib/db.ts
+import { Pool } from 'pg';
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const query = async (sql: string, values: any[], tenantId: string) => {
+  const client = await pool.connect();
+  try {
+    // Set tenant context
+    await client.query(
+      'SELECT set_config($1, $2, false)',
+      ['app.current_tenant_id', tenantId]
+    );
+
+    // Execute query (RLS will filter automatically)
+    return await client.query(sql, values);
+  } finally {
+    client.release();
+  }
+};
+```
+
+```typescript
+// app/api/projects/route.ts
+import { getServerSession } from 'next-auth';
+import { query } from '@/lib/db';
+
+export async function GET(req: Request) {
+  const session = await getServerSession();
+  const tenantId = session?.user?.tenant_id;
+
+  const result = await query(
+    'SELECT * FROM projects WHERE tenant_id = $1',
+    [tenantId],
+    tenantId
+  );
+
+  return Response.json(result.rows);
+}
+```
+
+## Monitoring & Observability
+
+Track key metrics:
+
+```sql
+-- Tenant usage
+SELECT 
+  tenant_id,
+  COUNT(*) as row_count,
+  pg_total_relation_size(schemaname||'.'||tablename) as size_bytes
+FROM pg_tables
+WHERE schemaname = 'public'
+GROUP BY tenant_id;
+
+-- Find slow queries per tenant
+SELECT
+  current_setting('app.current_tenant_id') as tenant_id,
+  query,
+  calls,
+  mean_exec_time
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC;
+```
+
+## Cost Estimation
+
+Single PostgreSQL database:
+- **Managed**: $50–500/month (AWS RDS, Azure, Supabase)
+- **Replicas**: +$200/month each
+- **Backups**: Usually included
+
+For 1000 customers: ~$0.05–0.50 per customer/month. Very cheap.
+
+vs. single-tenant:
+
+1000 customers × $50/db = $50k/month. Expensive.
+
+## Summary
+
+Multi-tenant SaaS databases require:
+1. **tenant_id in every table**
+2. **RLS for enforcement**
+3. **Proper backups**
+4. **Monitoring & auditing**
+5. **Careful query design**
+
+Done right, scales to millions of users.
+
+---
+
+**Next**: Learn [Data residency and compliance](https://example.com) or read [Sharding strategies for hyper-scale SaaS](https://example.com).

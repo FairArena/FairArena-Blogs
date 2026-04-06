@@ -1,0 +1,433 @@
+---
+title: "RAG (Retrieval Augmented Generation) Tutorial: Build AI Apps With Your Data"
+description: "RAG (Retrieval Augmented Generation) tutorial: learn RAG architecture, vector databases, embeddings, semantic search, and how to build AI apps that access your company's data. Includes a complete example."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["AI", "RAG", "LLMs", "Vector Databases", "Tutorial", "2026"]
+keywords: ["RAG tutorial", "retrieval augmented generation", "Pinecone RAG", "embeddings tutorial", "RAG example 2026"]
+image: https://picsum.photos/seed/rag-tutorial/1200/630
+---
+
+# RAG (Retrieval Augmented Generation) Tutorial: Build AI Apps With Your Data
+
+RAG (Retrieval Augmented Generation) is the most practical AI technique in 2026. It solves the hallucination problem: AI systems confidently making up answers.
+
+RAG works by retrieving relevant documents from your knowledge base, then feeding them to an LLM to generate answers. Result: accurate, grounded responses.
+
+## The Problem: LLM Hallucinations
+
+LLMs like ChatGPT are trained on public internet data (up to early 2024). They don't know:
+- Your company's internal documents
+- Recent events
+- Proprietary data
+- Real-time information
+
+Ask "What's our company's return policy?" and it'll confidently invent an answer.
+
+## The Solution: RAG
+
+**RAG = Retrieval + Augmentation + Generation**
+
+1. **Retrieval**: Find relevant documents from your knowledge base
+2. **Augmentation**: Add those documents to the prompt
+3. **Generation**: LLM generates answer using your data
+
+Flow:
+```
+User: "What's our return policy?"
+     ↓
+Retriever: Search knowledge base
+     ↓
+Find: [company_docs/returns_policy.md, company_site/faq.md]
+     ↓
+Prompt: "Based on this: [document content], answer: What's our return policy?"
+     ↓
+LLM: "Based on your policy, returns within 30 days..."
+```
+
+## How RAG Works
+
+### Step 1: Embedding Your Documents
+
+Convert documents to **embeddings** (vectors). Embeddings capture semantic meaning.
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# Your documents
+documents = [
+    "Our return policy: 30 days, no questions asked",
+    "Shipping costs: Free for orders >$50",
+    "We accept Visa, Mastercard, American Express"
+]
+
+# Convert to embeddings
+embeddings = []
+for doc in documents:
+    response = client.embeddings.create(
+        input=doc,
+        model="text-embedding-3-small"
+    )
+    embeddings.append(response.data[0].embedding)
+    # embedding is a list of 1536 numbers
+```
+
+### Step 2: Store in Vector Database
+
+```python
+import pinecone
+
+# Connect to Pinecone (vector DB)
+index = pinecone.Index("my-company")
+
+# Store embeddings with metadata
+for i, (doc, embedding) in enumerate(zip(documents, embeddings)):
+    index.upsert([(
+        f"doc_{i}",
+        embedding,
+        {"text": doc, "source": "company_kb"}
+    )])
+```
+
+### Step 3: Search (Semantic Search)
+
+When user asks a question, retrieve similar documents:
+
+```python
+# User question
+query = "Can I return my order?"
+
+# Convert question to embedding
+query_embedding = client.embeddings.create(
+    input=query,
+    model="text-embedding-3-small"
+).data[0].embedding
+
+# Find similar documents
+results = index.query(vector=query_embedding, top_k=3, include_metadata=True)
+
+# results now contains:
+# [
+#   {id: "doc_0", score: 0.92, metadata: {text: "Our return policy: 30 days..."}},
+#   {id: "doc_1", score: 0.61, metadata: {text: "Shipping costs..."}},
+#   ...
+# ]
+```
+
+### Step 4: Generate with Context
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# Get retrieved documents
+context = "\n".join([
+    result.metadata["text"] 
+    for result in results
+])
+
+# Create prompt with context
+prompt = f"""Answer the question based on this context:
+
+{context}
+
+Question: {query}
+
+Answer:"""
+
+# Generate
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": prompt}]
+)
+
+print(response.choices[0].message.content)
+# Output: "Yes, you can return your order within 30 days with no questions asked."
+```
+
+## Production RAG Stack (2026)
+
+### Embeddings
+- **OpenAI** (`text-embedding-3-small/large`)
+- **Cohere**
+- **Open-source** (BAAI/bge-small, all-MiniLM-L6-v2)
+
+### Vector Databases
+- **Pinecone** (managed, beginner-friendly)
+- **Weaviate** (open-source, self-hosted)
+- **Supabase pgvector** (PostgreSQL native)
+- **Qdrant** (fast, optimized)
+- **Milvus** (scalable)
+
+### LLM Providers
+- **OpenAI** (GPT-4, most capable)
+- **Anthropic Claude** (30k context window, cheaper)
+- **Google Gemini**
+- **Open-source Llama** (self-hosted)
+
+### RAG Frameworks
+- **LangChain** (most popular, Python/JS)
+- **LlamaIndex** (specialized for data indexing)
+- **Vercel AI SDK** (React/Next.js)
+
+## Complete RAG Example: Customer Support Bot
+
+Let's build an AI customer support bot using your company's FAQ.
+
+### 1. Load & Embed Documents
+
+```python
+from langchain.document_loaders import TextLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Pinecone
+import pinecone
+
+# Load FAQ document
+raw_file = TextLoader("faq.txt").load()
+
+# Split into chunks
+splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+documents = splitter.split_documents(raw_file)
+
+# Create embeddings and store in Pinecone
+embeddings = OpenAIEmbeddings()
+vector_store = Pinecone.from_documents(
+    documents,
+    embeddings,
+    index_name="customer-faq"
+)
+```
+
+### 2. Create RAG Chain
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import RetrievalQA
+
+# Initialize LLM and retriever
+llm = ChatOpenAI(model="gpt-4", temperature=0)
+retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+
+# Create RAG chain
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",
+    retriever=retriever,
+    return_source_documents=True
+)
+
+# Query
+question = "How long is your return window?"
+response = qa_chain({"query": question})
+
+print(response["result"])
+# Output: Based on your FAQ, the return window is 30 days.
+print(response["source_documents"])
+# Shows which documents were used
+```
+
+### 3. Deploy as API (Next.js)
+
+```typescript
+// app/api/support/route.ts
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { Pinecone } from "@pinecone-database/pinecone";
+import { ChatOpenAI } from "langchain/chat_models/openai";
+import { RetrievalQA } from "langchain/chains";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  const { question } = await req.json();
+
+  // Initialize RAG chain
+  const embeddings = new OpenAIEmbeddings();
+  const vectorStore = await Pinecone.fromExistingIndex(
+    embeddings,
+    { indexName: "customer-faq" }
+  );
+
+  const llm = new ChatOpenAI({ modelName: "gpt-4" });
+  const qa = RetrievalQA.fromChainType({
+    llm,
+    chainType: "stuff",
+    retriever: vectorStore.asRetriever(),
+  });
+
+  const result = await qa.call({ query: question });
+
+  return NextResponse.json(result);
+}
+```
+
+### 4. Frontend Component
+
+```typescript
+// app/components/support-bot.tsx
+"use client";
+
+import { useState } from "react";
+
+export default function SupportBot() {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const ask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const res = await fetch("/api/support", {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    });
+
+    const data = await res.json();
+    setAnswer(data.text);
+    setLoading(false);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">AI Support Assistant</h1>
+
+      <form onSubmit={ask} className="mb-6">
+        <input
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask anything about our products..."
+          className="w-full p-2 border rounded"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-2 bg-blue-500 text-white p-2 rounded"
+        >
+          {loading ? "Thinking..." : "Ask"}
+        </button>
+      </form>
+
+      {answer && (
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">Answer:</h2>
+          <p>{answer}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Advanced RAG Techniques
+
+### 1. Chunking Strategy
+
+How you split documents affects retrieval:
+
+```python
+# Option 1: Fixed size chunks
+splitter = CharacterTextSplitter(chunk_size=500)
+
+# Option 2: Semantic chunks (split by relevance)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", ".", " "],  # Try these first
+    chunk_size=500
+)
+
+# Option 3: Smart chunking (pay attention to document structure)
+# Split by headings/sections, not arbitrary positions
+```
+
+### 2. Re-ranking
+
+Retrieve 10 documents, then re-rank by relevance:
+
+```python
+from langchain.retrievers import MultiQueryRetriever
+from sentence_transformers import CrossEncoder
+
+# Get initial results
+initial_results = retriever.get_relevant_documents(query)
+
+# Re-rank
+cross_encoder = CrossEncoder("cross-encoder/mmarco-mMiniLMv2-L12-H384")
+scores = cross_encoder.predict(
+    [[query, doc.page_content] for doc in initial_results]
+)
+
+# Sort by score
+ranked = sorted(
+    zip(initial_results, scores),
+    key=lambda x: x[1],
+    reverse=True
+)
+```
+
+### 3. Hybrid Search
+
+Combine semantic AND keyword search:
+
+```python
+# BM25 (keyword search)
+from langchain.retrievers import BM25Retriever
+
+# Semantic search
+semantic_retriever = vector_store.as_retriever()
+
+# Combine
+from langchain.retrievers import EnsembleRetriever
+
+ensemble = EnsembleRetriever(
+    retrievers=[
+        BM25Retriever.from_documents(documents),
+        semantic_retriever
+    ],
+    weights=[0.5, 0.5]
+)
+```
+
+## Common Pitfalls
+
+1. **Poor chunking**: Too small = fragmented context. Too large = irrelevant noise
+2. **Stale data**: Embeddings become outdated. Re-embed when documents change
+3. **Context window limits**: Claude has 200k context, GPT-4 has 128k. Don't exceed it
+4. **Cost**: Embeddings + LLM calls add up. Monitor costs
+
+## Cost Estimate (Monthly)
+
+For 10k support queries:
+- Embeddings: 10k queries × $0.00002 = $0.20
+- Retrievals: (included in vector DB)
+- LLM calls: 10k × $0.003 (GPT-4) = $30
+
+Total: ~$30–50/month. Very cheap.
+
+## When to Use RAG
+
+✅ Customer support (Q&A from FAQ)
+✅ Document analysis (search contracts, papers)
+✅ Knowledge bases (internal wikis, policies)
+✅ Content search (search blog posts, docs)
+
+❌ Real-time retrieval (stock prices, weather)
+❌ Complex reasoning (requires fine-tuning)
+❌ Multi-step logic (requires agents, not just RAG)
+
+## Next Steps
+
+1. Set up Pinecone (free tier: 1M vectors)
+2. Embed your company documents
+3. Build a simple Q&A bot
+4. Deploy to production
+5. Monitor & iterate
+
+RAG is the simplest way to add AI to your apps in 2026.
+
+---
+
+**Next**: Learn about [AI agents explained](https://example.com) or read [Building AI-powered search](https://example.com).

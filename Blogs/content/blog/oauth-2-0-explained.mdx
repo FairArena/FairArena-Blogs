@@ -1,0 +1,381 @@
+---
+title: "OAuth 2.0 Explained: Authentication for Modern Apps in 2026"
+description: "Learn OAuth 2.0: how it works, OAuth vs JWT, implementing sign-in with Google/GitHub, security best practices, and common patterns."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["Authentication", "OAuth", "Security", "Backend", "2026"]
+keywords: ["OAuth 2.0 explained", "OAuth vs JWT", "implement OAuth 2.0", "sign-in with Google GitHub"]
+image: https://picsum.photos/seed/oauth2-guide/1200/630
+---
+
+# OAuth 2.0 Explained: Authentication for Modern Apps in 2026
+
+OAuth 2.0 is the standard for third-party authentication in 2026. "Sign in with Google," "Sign in with GitHub"—that's OAuth.
+
+This guide explains how OAuth works, when to use it, and how to implement it.
+
+## The Problem OAuth Solves
+
+### Without OAuth (Old Way)
+
+```
+User visits MyApp
+  ↓
+MyApp asks: Username and password for Gmail?
+  ↓
+User enters Gmail password into MyApp
+  ↓
+MyApp stores Gmail password 😱
+  ↓
+MyApp later uses password to login as user
+```
+
+**Problems**:
+- User gives password to untrusted app
+- MyApp can impersonate user forever
+- Password leak = attacker has Gmail access
+- User must manage passwords everywhere
+
+### With OAuth (Modern Way)
+
+```
+User visits MyApp
+  ↓
+MyApp says: "Click 'Sign in with Google'"
+  ↓
+User redirected to Google
+  ↓
+User logs into Google (secure)
+  ↓
+Google asks: "Allow MyApp to access your profile?"
+  ↓
+User clicks "Allow"
+  ↓
+Google gives MyApp a token (not password!)
+  ↓
+MyApp uses token to access user's profile
+  ↓
+User returned to MyApp (logged in!)
+```
+
+**Benefits**:
+- User never shares password with MyApp
+- MyApp gets limited access (can't access Gmail itself)
+- Token can be revoked anytime
+- User controls permissions
+
+## OAuth 2.0 Roles
+
+```
+Resource Owner: You (the user)
+  ↓
+Client: MyApp (wants your data)
+  ↓
+Authorization Server: Google (manages permissions)
+  ↓
+Resource Server: Google API (has your data)
+```
+
+## OAuth 2.0 Flow (Authorization Code)
+
+Most common flow. Used by web applications.
+
+```
+1. User clicks "Sign in with Google"
+   ↓
+2. Browser redirected to Google:
+   https://accounts.google.com/o/oauth2/v2/auth?
+     client_id=GOOGLE_CLIENT_ID&
+     redirect_uri=https://myapp.com/auth/callback&
+     scope=profile+email&
+     response_type=code
+   ↓
+3. User logs into Google, grants permission
+   ↓
+4. Google redirects back to MyApp with code:
+   https://myapp.com/auth/callback?code=AUTH_CODE&state=STATE
+   ↓
+5. MyApp backend exchanges code for token:
+   POST https://oauth2.googleapis.com/token
+   {
+     "code": "AUTH_CODE",
+     "client_id": "GOOGLE_CLIENT_ID",
+     "client_secret": "GOOGLE_SECRET",  // ⚠️ keep secret!
+     "redirect_uri": "https://myapp.com/auth/callback",
+     "grant_type": "authorization_code"
+   }
+   ↓
+6. Google returns access token:
+   {
+     "access_token": "ya29.a0AfH6SMBx...",
+     "token_type": "Bearer",
+     "expires_in": 3599
+   }
+   ↓
+7. MyApp uses token to fetch user profile:
+   GET https://www.googleapis.com/oauth2/v2/userinfo
+   Authorization: Bearer ya29.a0AfH6SMBx...
+   ↓
+8. Google returns user data:
+   {
+     "id": "123456",
+     "email": "user@gmail.com",
+     "name": "John Doe"
+   }
+   ↓
+9. MyApp creates session, redirects to dashboard
+```
+
+## Implementing OAuth: Next.js + NextAuth Example
+
+### 1. Install Dependencies
+
+```bash
+npm install next-auth
+```
+
+### 2. Configure
+
+**lib/auth.ts**:
+```typescript
+import { NextAuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+  ],
+  
+  callbacks: {
+    async redirect({ url, baseUrl }) {
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
+    
+    async session({ session, user }) {
+      session.user.id = user.id;
+      return session;
+    },
+  },
+  
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+  },
+};
+```
+
+**env.local**:
+```
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_secret
+
+GITHUB_ID=your_github_id
+GITHUB_SECRET=your_github_secret
+
+NEXTAUTH_SECRET=generate_with: openssl rand -base64 32
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### 3. API Route
+
+**app/api/auth/[...nextauth]/route.ts**:
+```typescript
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
+```
+
+### 4. Create Sign-In Button
+
+**app/components/signin-button.tsx**:
+```typescript
+'use client';
+
+import { signIn, useSession } from "next-auth/react";
+
+export default function SignInButton() {
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <div>
+        Signed in as {session.user?.email}
+        <button onClick={() => signOut()}>Sign out</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <button onClick={() => signIn("google")} className="btn btn-google">
+        Sign in with Google
+      </button>
+      
+      <button onClick={() => signIn("github")} className="btn btn-github">
+        Sign in with GitHub
+      </button>
+    </div>
+  );
+}
+```
+
+### 5. Protect Routes
+
+**app/dashboard/page.tsx**:
+```typescript
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+
+export default async function Dashboard() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect("/api/auth/signin");
+  }
+  
+  return (
+    <div>
+      <h1>Welcome, {session.user.name}</h1>
+      <p>Email: {session.user.email}</p>
+    </div>
+  );
+}
+```
+
+## Setup Google OAuth Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create new project
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials (Web application)
+5. Add redirect URIs:
+   - http://localhost:3000/api/auth/callback/google
+   - https://myapp.com/api/auth/callback/google
+6. Copy Client ID & Secret to `.env.local`
+
+## OAuth vs JWT
+
+### OAuth 2.0
+
+- **Use case**: Third-party authentication ("Sign in with Google")
+- **Server involved**: Authorization server (Google) keeps user's password
+- **Token scope**: Limited permissions
+- **Revocation**: Can revoke token from Google account settings
+- **Overhead**: Higher (involves redirects)
+
+### JWT (JSON Web Tokens)
+
+- **Use case**: Internal authentication (username/password)
+- **Server involved**: Your own server manages passwords
+- **Token scope**: Full access
+- **Revocation**: Harder (tokens valid until expiry)
+- **Overhead**: Lower (stateless)
+
+### When to Use
+
+- **OAuth**: Social login, third-party integrations
+- **JWT**: Internal APIs, microservices
+- **Both**: Large apps often use both (OAuth for signup, JWT for APIs)
+
+## PKCE (Proof Key for Code Exchange)
+
+For mobile & SPA apps, adds security:
+
+```typescript
+// Client generates code_verifier & code_challenge
+const codeVerifier = generateRandomString(128);
+const codeChallenge = base64urlEncode(sha256(codeVerifier));
+
+// Send code_challenge in auth request
+https://accounts.google.com/o/oauth2/v2/auth?
+  ...
+  code_challenge=E9Mrozoa2owUednMg7ps5i8K...&
+  code_challenge_method=S256
+
+// Exchange code with code_verifier
+POST /token {
+  code,
+  code_verifier,  // ← Proves you're the same app
+  ...
+}
+```
+
+Prevents authorization code interception attacks.
+
+## Security Best Practices
+
+1. **Keep client_secret secret** (only in backend, never frontend)
+2. **Use HTTPS always** (OAuth tokens in URLs)
+3. **Validate state parameter** (prevents CSRF)
+4. **Use short-lived tokens** (expires in 1 hour)
+5. **Refresh tokens offline** (don't expose)
+6. **Validate redirect_uri** (prevent open redirect)
+
+```typescript
+// Example: Validate redirect
+if (!ALLOWED_REDIRECTS.includes(redirect_uri)) {
+  throw new Error('Unauthorized redirect');
+}
+```
+
+## Common OAuth Providers (2026)
+
+- **Google**: Largest user base
+- **GitHub**: Developer-focused
+- **Microsoft/Azure AD**: Enterprise
+- **Apple**: Privacy-focused (required for iOS apps)
+- **Discord**: Gaming/community apps
+- **Twitter/X**: Social apps
+- **LinkedIn**: B2B SaaS
+
+## Troubleshooting
+
+### "Invalid redirect_uri"
+- Make sure exact URL matches in OAuth config
+- Check for http vs https, www vs nowww
+
+### "Invalid client_id"
+- Verify client_id from provider's dashboard
+- Check env variables loaded
+
+### Token expires silently
+- Implement token refresh
+- Store refresh_token securely
+- Auto-refresh before expiry
+
+## Cost
+
+- **OAuth**: Free (handled by provider)
+- **No per-request fees**
+- **Only cost**: Server infrastructure
+
+## Summary
+
+OAuth 2.0 in 2026:
+- **Standard for social login**
+- **User-centric security**
+- **Easy with NextAuth.js**
+- **Integrate multiple providers**
+- **Highly secure when done right**
+
+Use OAuth for third-party auth. Build with NextAuth. Ship fast.
+
+---
+
+**Next**: Learn about [JWT best practices](https://example.com) or read [Multi-provider authentication](https://example.com).

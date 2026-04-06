@@ -1,0 +1,526 @@
+---
+title: "Terraform Infrastructure as Code: Complete Guide for 2026"
+description: "Learn Terraform from scratch: modules, state management, best practices, and how to provision cloud infrastructure as code. AWS, Azure, GCP examples."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["Terraform", "IaC", "DevOps", "Cloud", "Infrastructure", "2026"]
+keywords: ["Terraform guide", "infrastructure as code Terraform", "Terraform AWS examples", "Terraform best practices 2026"]
+image: https://picsum.photos/seed/terraform-guide/1200/630
+---
+
+# Terraform Infrastructure as Code: Complete Guide for 2026
+
+Infrastructure as Code (IaC) is table stakes in 2026. Terraform is the industry standard.
+
+Instead of clicking AWS console buttons, write code to define your infrastructure. Reproducible, version-controlled, automated.
+
+## What is Terraform?
+
+Terraform is an IaC tool that lets you define cloud infrastructure in HCL (HashiCorp Configuration Language).
+
+**Without Terraform (Manual):**
+```
+1. Click AWS console
+2. Create VPC
+3. Create subnet
+4. Create EC2 instance
+5. Create security group
+6. Configure load balancer
+(Fragile, error-prone, hard to reproduce)
+```
+
+**With Terraform:**
+```
+1. Write main.tf defining all resources
+2. terraform plan (preview changes)
+3. terraform apply (create infrastructure)
+(Reproducible, versionable, auditable)
+```
+
+## Install Terraform
+
+```bash
+# macOS
+brew install terraform
+
+# Windows
+choco install terraform
+
+# Linux
+wget https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_amd64.zip
+unzip terraform_1.7.0_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+
+# Verify
+terraform version
+# Terraform v1.7.0
+```
+
+## Basic Terraform Syntax
+
+### Providers (Cloud Platforms)
+
+```hcl
+# main.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+```
+
+### Resources (Infrastructure)
+
+```hcl
+# Create an S3 bucket
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-company-data"
+}
+
+# Create an EC2 instance
+resource "aws_instance" "web_server" {
+  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2
+  instance_type = "t3.micro"
+  
+  tags = {
+    Name = "web-server-1"
+  }
+}
+```
+
+## Workflow
+
+```bash
+# 1. Initialize (download providers, setup state)
+terraform init
+
+# 2. Format & validate (check syntax)
+terraform fmt
+terraform validate
+
+# 3. Plan (preview what will be created)
+terraform plan
+# Output shows: Create, Modify, Destroy
+
+# 4. Apply (actually create infrastructure)
+terraform apply
+# Requires confirmation: type 'yes'
+
+# 5. Destroy (delete everything)
+terraform destroy
+```
+
+## Real Example: Deploy a Web App
+
+Let's create an EC2 instance with a security group and Elastic IP:
+
+```hcl
+# variables.tf
+variable "instance_type" {
+  default = "t3.micro"
+}
+
+variable "region" {
+  default = "us-east-1"
+}
+
+# main.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
+
+# Security group (firewall)
+resource "aws_security_group" "web" {
+  name = "web-sg"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["YOUR_IP/32"]  # ⚠️ Restrict to your IP
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# EC2 instance
+resource "aws_instance" "web" {
+  ami                    = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2
+  instance_type          = var.instance_type
+  vpc_security_group_ids = [aws_security_group.web.id]
+
+  # Run on startup
+  user_data = <<-EOF
+    #!/bin/bash
+    yum update -y
+    yum install -y httpd
+    systemctl start httpd
+    echo "<h1>Hello from Terraform!</h1>" > /var/www/html/index.html
+  EOF
+
+  tags = {
+    Name = "web-server"
+  }
+}
+
+# Elastic IP (static public IP)
+resource "aws_eip" "web" {
+  instance = aws_instance.web.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "web-eip"
+  }
+}
+
+# outputs.tf
+output "instance_public_ip" {
+  value       = aws_eip.web.public_ip
+  description = "Public IP of the web server"
+}
+
+output "instance_id" {
+  value = aws_instance.web.id
+}
+```
+
+### Deploy
+
+```bash
+terraform init
+terraform plan
+# Review output
+
+terraform apply
+# Type 'yes' to confirm
+
+# After apply, see outputs
+# instance_public_ip = 54.123.45.67
+# Visit http://54.123.45.67 in browser
+```
+
+## State Management
+
+Terraform stores state in `terraform.tfstate` file. This tracks what's currently deployed.
+
+**Problem**: Sharing state with teammates.
+
+**Solution**: Remote state (store in S3 or Terraform Cloud)
+
+```hcl
+# backend.tf
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state"
+    key            = "prod/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-lock"
+  }
+}
+```
+
+Now state lives in S3, not your laptop. DynamoDB prevents conflicts.
+
+## Modules (Reusable Code)
+
+Don't repeat yourself. Use modules.
+
+```
+modules/
+├── vpc/
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── eks/
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+└── rds/
+    ├── main.tf
+    ├── variables.tf
+    └── outputs.tf
+
+main.tf (root)
+```
+
+### Module Example: VPC
+
+```hcl
+# modules/vpc/main.tf
+resource "aws_vpc" "main" {
+  cidr_block           = var.cidr_block
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = var.name
+  }
+}
+
+resource "aws_subnet" "main" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet_cidr
+  availability_zone = var.az
+
+  tags = {
+    Name = "${var.name}-subnet"
+  }
+}
+
+# modules/vpc/variables.tf
+variable "name" {
+  type = string
+}
+
+variable "cidr_block" {
+  type = string
+}
+
+variable "subnet_cidr" {
+  type = string
+}
+
+variable "az" {
+  type = string
+}
+
+# modules/vpc/outputs.tf
+output "vpc_id" {
+  value = aws_vpc.main.id
+}
+
+output "subnet_id" {
+  value = aws_subnet.main.id
+}
+```
+
+### Use Module
+
+```hcl
+# main.tf (root)
+module "vpc" {
+  source = "./modules/vpc"
+
+  name       = "prod"
+  cidr_block = "10.0.0.0/16"
+  subnet_cidr = "10.0.1.0/24"
+  az         = "us-east-1a"
+}
+
+module "eks" {
+  source = "./modules/eks"
+
+  name    = "prod-cluster"
+  vpc_id  = module.vpc.vpc_id
+  subnet_id = module.vpc.subnet_id
+}
+```
+
+Reusable, testable, scalable.
+
+## Best Practices
+
+### 1. Use Workspaces for Environments
+
+```bash
+# Create separate workspaces
+terraform workspace new prod
+terraform workspace new staging
+
+# Switch between
+terraform workspace select prod
+terraform apply
+```
+
+### 2. Sensitive Data
+
+```hcl
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+# In terraform.tfvars (NEVER commit to git)
+db_password = "super-secret"
+
+# Or use environment variables
+export TF_VAR_db_password="super-secret"
+```
+
+### 3. Locals (Internal Variables)
+
+```hcl
+locals {
+  common_tags = {
+    Project   = "myapp"
+    Environment = var.environment
+    Terraform = true
+  }
+}
+
+resource "aws_instance" "web" {
+  tags = local.common_tags
+}
+```
+
+### 4. Data Sources (Read Existing Resources)
+
+```hcl
+# Get existing VPC instead of creating
+data "aws_vpc" "default" {
+  default = true
+}
+
+resource "aws_security_group" "web" {
+  vpc_id = data.aws_vpc.default.id
+}
+```
+
+### 5. Validate Everything
+
+```hcl
+variable "instance_count" {
+  type = number
+
+  validation {
+    condition     = var.instance_count > 0 && var.instance_count < 100
+    error_message = "Instance count must be 1-99."
+  }
+}
+```
+
+### 6. Format & Organize
+
+```bash
+# Auto-format all files
+terraform fmt -recursive
+
+# Validate syntax
+terraform validate
+
+# Check for security issues
+tfsec .
+```
+
+## Testing Terraform
+
+```bash
+# Dry-run: see what would happen
+terraform plan -out=tfplan
+
+# Analyze changes
+terraform show tfplan
+
+# Review before applying
+terraform apply tfplan
+```
+
+## Pitfalls
+
+1. **Committing tfstate to Git** → Use remote state
+2. **Hardcoding values** → Use variables
+3. **No version control** → Use `required_providers`
+4. **Forgetting to `terraform destroy`** → Costs money!
+5. **No naming standards** → Use locals for common tags
+
+## Example: Multi-Environment Setup
+
+```
+terraform/
+├── environments/
+│   ├── dev/
+│   │   ├── terraform.tfvars
+│   │   ├── main.tf
+│   │   └── backend.tf
+│   ├── staging/
+│   │   ├── terraform.tfvars
+│   │   ├── main.tf
+│   │   └── backend.tf
+│   └── prod/
+│       ├── terraform.tfvars
+│       └── ...
+└── modules/
+    ├── vpc/
+    ├── eks/
+    └── rds/
+```
+
+Deploy dev:
+```bash
+cd terraform/environments/dev
+terraform init
+terraform apply
+```
+
+Deploy prod:
+```bash
+cd terraform/environments/prod
+terraform init
+terraform apply
+```
+
+Same code, different environments. Powerful.
+
+## State Locking
+
+Prevents conflicts when multiple people apply simultaneously:
+
+```hcl
+terraform {
+  backend "s3" {
+    ...
+    dynamodb_table = "terraform-lock"
+  }
+}
+```
+
+When one person runs `terraform apply`, lock is acquired. Others wait.
+
+## Summary
+
+- **Terraform** = Infrastructure as code (AWS, Azure, GCP)
+- **Reproducible**: Same code = same infrastructure
+- **Version-controlled**: Track changes in Git
+- **Modular**: Reuse code across projects
+- **Safe**: Plan before apply
+
+Terraform is worth learning deeply. It's a career skill in 2026.
+
+---
+
+**Next**: Learn [Terraform best practices for production](https://example.com) or read [CI/CD with Terraform](https://example.com).

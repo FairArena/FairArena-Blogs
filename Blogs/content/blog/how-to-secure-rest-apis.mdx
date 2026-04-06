@@ -1,0 +1,498 @@
+---
+title: "How to Secure REST APIs: Best Practices for 2026"
+description: "Complete guide to securing REST APIs: authentication, authorization, encryption, rate limiting, CORS, and common vulnerabilities. Production-ready checklist."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["Security", "API", "Backend", "DevSecOps", "2026"]
+image: https://picsum.photos/seed/api-security/1200/630
+---
+
+# How to Secure REST APIs: Best Practices for 2026
+
+API security is critical in 2026. A single breach can expose millions of users. This guide teaches you how to build secure REST APIs.
+
+## HTTPS/TLS (Transport Security)
+
+### The Foundation
+
+Always use HTTPS. Never HTTP.
+
+```typescript
+// Bad: HTTP (data sent in plain text)
+GET http://api.example.com/users
+
+// Good: HTTPS (encrypted)
+GET https://api.example.com/users
+```
+
+Attackers can intercept HTTP traffic and steal credentials, tokens, and data.
+
+### Implementation
+
+1. **Get an SSL/TLS certificate**
+   - Free: Let's Encrypt (via Certbot)
+   - Paid: Digicert, GlobalSign
+
+2. **Configure your server**
+   ```typescript
+   // Express
+   import https from 'https';
+   import fs from 'fs';
+
+   const options = {
+     key: fs.readFileSync('private-key.pem'),
+     cert: fs.readFileSync('certificate.pem'),
+   };
+
+   https.createServer(options, app).listen(443);
+   ```
+
+3. **Enforce HTTPS**
+   ```typescript
+   app.use((req, res, next) => {
+     if (req.header('x-forwarded-proto') !== 'https') {
+       res.redirect(`https://${req.header('host')}${req.url}`);
+     }
+     next();
+   });
+   ```
+
+### Certificate Pinning (Advanced)
+
+For mobile apps, pin the certificate to prevent MITM attacks:
+
+```swift
+// iOS
+let certificate = NSData(contentsOfFile: "certificate.cer")!
+URLSessionConfiguration.af.tlsEvaluators = [
+  "api.example.com": PinnedCertificatesTrustEvaluator(certificates: [certificate])
+]
+```
+
+## Authentication
+
+### JWT (JSON Web Tokens)
+
+Most common in 2026.
+
+```typescript
+// Generate token
+import jwt from 'jsonwebtoken';
+
+const token = jwt.sign(
+  { userId: user.id, email: user.email },
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' }
+);
+
+// Verify token
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
+```
+
+### JWT Flow
+
+```
+Client: POST /auth/login { email, password }
+         ↓
+Server: Validate credentials
+        Generate JWT: eyJhbGciOiJIUzI1NiIs...
+         ↓
+Client: Store token in localStorage or httpOnly cookie
+         ↓
+Client: GET /api/profile
+        Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+         ↓
+Server: Verify token signature using secret
+        Extract userId from payload
+        Return user data
+```
+
+### Middleware to Verify JWT
+
+```typescript
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+interface AuthRequest extends Request {
+  user?: { userId: string; email: string };
+}
+
+export const authMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    req.user = decoded as any;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Protect routes
+app.get('/api/profile', authMiddleware, (req, res) => {
+  res.json({ userId: req.user?.userId });
+});
+```
+
+### OAuth 2.0 (Third-party Auth)
+
+For Sign-in with Google, GitHub, etc.:
+
+```typescript
+import { google } from 'googleapis';
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'http://localhost:3000/auth/google/callback'
+);
+
+app.get('/auth/google', (req, res) => {
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['profile', 'email'],
+  });
+  res.redirect(url);
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  const { tokens } = await oauth2Client.getToken(code as string);
+  // tokens.access_token can now access protected resources
+});
+```
+
+## Authorization
+
+### Role-Based Access Control (RBAC)
+
+Users have roles; roles have permissions.
+
+```typescript
+// Middleware
+const authorize = (requiredRole: string) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (req.user?.role !== requiredRole) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    next();
+  };
+};
+
+// Usage
+app.delete('/api/users/:id', authMiddleware, authorize('admin'), (req, res) => {
+  // Only admins can delete users
+});
+```
+
+### Attribute-Based Access Control (ABAC)
+
+More granular: check attributes, not just roles.
+
+```typescript
+const canDelete = (resource: User, user: User) => {
+  // User can delete if:
+  // - They're the owner, OR
+  // - They're an admin
+  return resource.id === user.id || user.role === 'admin';
+};
+
+app.delete('/api/users/:id', authMiddleware, (req, res) => {
+  const user = req.user;
+  const resourceUser = await db.user.findUnique({ where: { id: req.params.id } });
+
+  if (!canDelete(resourceUser, user)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  // Delete user
+});
+```
+
+## Input Validation
+
+### Validate Everything
+
+```typescript
+import { z } from 'zod';
+
+const createUserSchema = z.object({
+  email: z.string().email('Invalid email'),
+  password: z.string().min(8, 'Password must be 8+ characters'),
+  age: z.number().int().min(18, 'Must be 18+'),
+});
+
+app.post('/api/users', (req, res) => {
+  const result = createUserSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({ errors: result.error.flatten() });
+  }
+
+  // result.data is validated
+  const user = await db.user.create({ data: result.data });
+  res.json(user);
+});
+```
+
+### Prevent SQL Injection
+
+Always use parameterized queries:
+
+```typescript
+// Bad: String concatenation
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+// If userId = "1) OR 1=1--", returns all users!
+
+// Good: Parameterized query
+const user = await db.user.findUnique({
+  where: { id: userId }  // Prisma/ORM handles escaping
+});
+```
+
+## Rate Limiting
+
+Prevent abuse and brute-force attacks.
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,                   // 100 requests per window
+  message: 'Too many requests, try again later',
+});
+
+// Apply globally
+app.use(limiter);
+
+// Or specific routes
+app.post('/api/login', limiter, (req, res) => {
+  // Max 100 login attempts per 15 minutes
+});
+
+// More aggressive for login
+const loginLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  max: 5,                      // 5 attempts per hour
+  skipSuccessfulRequests: true, // Don't count successful
+});
+
+app.post('/api/auth/login', loginLimiter, (req, res) => {
+  // Max 5 failed login attempts per hour
+});
+```
+
+### Distributed Rate Limiting
+
+Use Redis for multi-server setups:
+
+```typescript
+import RedisStore from 'rate-limit-redis';
+import redis from 'redis';
+
+const redisClient = redis.createClient();
+
+const limiter = rateLimit({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'rate-limit:',
+  }),
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+```
+
+## CORS (Cross-Origin Resource Sharing)
+
+Control which domains can access your API.
+
+```typescript
+import cors from 'cors';
+
+// Allow only specific origins
+app.use(cors({
+  origin: ['https://example.com', 'https://app.example.com'],
+  credentials: true,  // Allow cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Don't do this (allows all origins)
+app.use(cors());
+```
+
+## Secrets Management
+
+### Never Commit Secrets
+
+```typescript
+// Bad: In code
+const DB_PASSWORD = 'secretpassword123';
+
+// Good: In environment variables
+const DB_PASSWORD = process.env.DATABASE_PASSWORD;
+if (!DB_PASSWORD) throw new Error('DATABASE_PASSWORD not set');
+```
+
+### .env file(local only, never commit):
+
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/db
+JWT_SECRET=your-secret-key-here
+API_KEY=abc123
+```
+
+### Use a Secret Manager
+
+```typescript
+// AWS Secrets Manager
+import { SecretsManager } from 'aws-sdk';
+
+const sm = new SecretsManager();
+const secret = await sm.getSecretValue({ SecretId: 'prod/db-password' }).promise();
+```
+
+## OWASP Top 10 (API Focus)
+
+### 1. Authentication Bypass
+
+✅ Implement proper JWT verification
+✅ Use strong passwords + hashing (bcrypt)
+
+### 2. Broken Authorization
+
+✅ Check user permissions on every request
+✅ Don't trust client-side authorization
+
+### 3. Injection (SQL, NoSQL, Command)
+
+✅ Use parameterized queries
+✅ Validate and sanitize inputs
+
+### 4. Insecure Data Transmission
+
+✅ Use HTTPS always
+✅ Don't log sensitive data
+✅ Encrypt sensitive fields
+
+### 5. Broken Access Control
+
+✅ Implement RBAC/ABAC
+✅ Fail securely (deny by default)
+
+### 6. Security Misconfiguration
+
+✅ Use security headers
+✅ Disable debugging in production
+✅ Keep dependencies updated
+
+### 7. XSS (Cross-Site Scripting)
+
+✅ Escape output in frontend
+✅ Use Content Security Policy header
+
+### 8. CSRF (Cross-Site Request Forgery)
+
+✅ Use CSRF tokens for state-changing requests
+✅ Use SameSite cookie attribute
+
+### 9. Components with Known Vulnerabilities
+
+✅ Regularly audit dependencies
+✅ `npm audit`, `snyk`
+
+### 10. Insufficient Logging
+
+✅ Log authentication failures
+✅ Monitor for suspicious patterns
+✅ Don't log passwords/tokens
+
+## Security Headers
+
+```typescript
+app.use((req, res, next) => {
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  // Prevent MIME sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // Enable XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+
+  // Strict Transport Security (HTTPS only)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+  // Content Security Policy
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+
+  // Referrer Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  next();
+});
+```
+
+## Security Checklist for Production APIs
+
+- [ ] HTTPS enabled, certificate valid
+- [ ] Strong authentication (JWT/OAuth)
+- [ ] Authorization checks on protected endpoints
+- [ ] Input validation (Zod, joi)
+- [ ] Rate limiting enabled
+- [ ] CORS configured correctly
+- [ ] Secrets in environment variables
+- [ ] Security headers set
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] Logging & monitoring setup
+- [ ] Dependencies audited (`npm audit`)
+- [ ] No sensitive data in logs/error messages
+- [ ] Password hashing (bcrypt)
+- [ ] CSRF protection (if needed)
+- [ ] OWASP best practices followed
+
+## Tools for API Security Testing
+
+```bash
+# Dependency scanning
+npm audit
+npm install -g snyk
+snyk test
+
+# Security linting
+npm install --save-dev @typescript-eslint/eslint-plugin-security
+
+# API testing
+npm install --save-dev supertest
+
+# Manual testing
+# Use Postman/Insomnia with security tests
+```
+
+## Summary
+
+Secure APIs in 2026 require:
+1. **HTTPS** always
+2. **JWT/OAuth** for authentication
+3. **Role-based access control** for authorization
+4. **Input validation** for everything
+5. **Rate limiting** to prevent abuse
+6. **Security headers** for defense-in-depth
+7. **Secret management** for credentials
+8. **Monitoring & logging** for incidents
+
+Make security part of your development process from day one.
+
+---
+
+**Next**: Learn about [JWT best practices](https://example.com) or read about [OAuth 2.0 flows](https://example.com).

@@ -1,0 +1,534 @@
+---
+title: "How to Set Up CI/CD Pipeline with GitHub Actions: Complete Guide"
+description: "Learn GitHub Actions CI/CD workflows: automated testing, building, deploying. Deploy to Vercel, AWS, Docker Hub. Production-ready examples."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["CI/CD", "GitHub Actions", "DevOps", "Automation", "2026"]
+keywords: ["GitHub Actions CI/CD", "GitHub Actions workflow tutorial", "CI/CD pipeline guide", "deploy with GitHub Actions"]
+image: https://picsum.photos/seed/github-actions/1200/630
+---
+
+# How to Set Up CI/CD Pipeline with GitHub Actions: Complete Guide
+
+GitHub Actions is the easiest way to automate testing, building, and deploying in 2026.
+
+No need for Jenkins, CircleCI, or Travis. It's built into GitHub, free for public/private repos, and incredibly powerful.
+
+## What is CI/CD?
+
+### CI (Continuous Integration)
+
+Automatically test every commit:
+
+```
+Push code
+  ↓
+GitHub Actions triggers
+  ↓
+Run tests
+  ↓
+Run lint
+  ↓
+Build
+  ↓
+Success ✅ or Fail ❌
+```
+
+### CD (Continuous Deployment)
+
+Automatically deploy on success:
+
+```
+Build succeeds
+  ↓
+Deploy to staging
+  ↓
+Run smoke tests
+  ↓
+Deploy to production
+  ↓
+All done!
+```
+
+## Setting Up GitHub Actions
+
+### Step 1: Create Workflow File
+
+Create `.github/workflows/ci.yml`:
+
+```yaml
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci  # cleaner than npm install
+      
+      - name: Lint
+        run: npm run lint
+      
+      - name: Test
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+```
+
+Push this file to GitHub. Now every commit triggers tests.
+
+### Step 2: View Results
+
+```
+Repository → Actions → [latest workflow]
+```
+
+See:
+- ✅ Passed steps (green)
+- ❌ Failed steps (red)
+- Logs for debugging
+
+## Real-World Example: Next.js App
+
+```yaml
+# .github/workflows/ci-cd.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup database
+        run: |
+          npm run db:migrate:test
+          npm run db:seed:test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      
+      - name: Run linter
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test:ci
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+
+  deploy:
+    needs: test  # Only run if test job passed
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Vercel
+        run: |
+          npm install -g vercel
+          vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+```
+
+## Deploying to Different Platforms
+
+### Deploy to Vercel
+
+```yaml
+deploy:
+  runs-on: ubuntu-latest
+  needs: test
+  if: github.ref == 'refs/heads/main'
+  
+  steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Vercel
+      uses: vercel/action@master
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+```
+
+### Deploy to AWS EC2
+
+```yaml
+deploy:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to EC2
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          cd /app
+          git pull origin main
+          npm install
+          npm run build
+          systemctl restart app
+        EOF
+```
+
+### Deploy Docker to Docker Hub
+
+```yaml
+deploy:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+```
+
+## Environment Variables & Secrets
+
+### Store Secrets
+
+```
+Repository → Settings → Secrets and variables → Actions → New secret
+
+Name: DATABASE_URL
+Value: postgresql://user:pass@host:5432/db
+```
+
+Use in workflow:
+
+```yaml
+- name: Deploy
+  run: npm run deploy
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    API_KEY: ${{ secrets.API_KEY }}
+```
+
+### Variables (Non-Secret)
+
+For non-sensitive values:
+
+```
+Repository → Settings → Secrets and variables → Variables → New variable
+
+Name: APP_VERSION
+Value: 2.0.0
+```
+
+Use:
+
+```yaml
+- name: Print version
+  run: echo "Deploying ${{ vars.APP_VERSION }}"
+```
+
+## Matrix Strategy (Test Multiple Versions)
+
+Test against multiple Node versions:
+
+```yaml
+test:
+  runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      node-version: [18, 20, 22]
+  
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - run: npm test
+```
+
+Creates 3 parallel jobs, tests against Node 18, 20, 22.
+
+## Caching Dependencies
+
+Speed up workflows by caching:
+
+```yaml
+- name: Setup Node.js
+  uses: actions/setup-node@v3
+  with:
+    node-version: 20
+    cache: 'npm'  # Caches node_modules
+
+- name: Install dependencies
+  run: npm ci  # Quick, uses cache
+```
+
+Result: Dependency installation goes from 60s to 5s.
+
+## Running Tests in Parallel
+
+```yaml
+test:
+  runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      test-suite: [unit, integration, e2e]
+  
+  steps:
+    - run: npm run test:${{ matrix.test-suite }}
+```
+
+Runs all test suites in parallel. Faster feedback.
+
+## Conditional Steps
+
+Run steps only on certain conditions:
+
+```yaml
+- name: Deploy to production
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  run: vercel --prod
+  
+- name: Deploy to staging
+  if: github.event_name == 'pull_request'
+  run: vercel --staging
+
+- name: Notify on failure
+  if: failure()  # Special condition: previous step failed
+  run: |
+    curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+      -d '{"text": "Deploy failed!"}'
+```
+
+## Notifications
+
+### Slack Notification
+
+```yaml
+- name: Slack notification
+  if: always()  # Run even if previous step failed
+  uses: slackapi/slack-github-action@v1
+  with:
+    webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+    payload: |
+      {
+        "text": "Deploy ${{ job.status }} for ${{ github.repository }}"
+      }
+```
+
+### Email Notification
+
+GitHub sends email on job failure automatically (if you enable it).
+
+## Advanced: Custom Actions
+
+Create reusable action:
+
+```
+.github/actions/my-action/
+├── action.yml
+└── index.js
+```
+
+**action.yml**:
+```yaml
+name: 'My Custom Action'
+description: 'Does something cool'
+
+inputs:
+  api-key:
+    description: 'API Key'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'index.js'
+```
+
+**index.js**:
+```javascript
+const core = require('@actions/core');
+
+const apiKey = core.getInput('api-key');
+console.log(`Using API key: ${apiKey}`);
+```
+
+Use in workflow:
+
+```yaml
+- uses: ./.github/actions/my-action
+  with:
+    api-key: ${{ secrets.API_KEY }}
+```
+
+## Performance Optimization
+
+### 1. Only Run on Relevant Changes
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'       # Run only if src/ changes
+      - '.github/**'   # Or GitHub Actions changes
+      - 'package.json'
+```
+
+### 2. Use Concurrency (Cancel Old Runs)
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+If you push 5 times quick, only latest run matters.
+
+### 3. Use reusable Workflows
+
+```
+.github/workflows/
+├── test.yml          (reusable)
+└── ci-cd.yml        (calls test.yml)
+```
+
+**test.yml**:
+```yaml
+on:
+  workflow_call:  # Mark as reusable
+
+jobs:
+  test:
+    ...
+```
+
+**ci-cd.yml**:
+```yaml
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+  
+  deploy:
+    needs: test
+```
+
+## Debugging
+
+### View Full Logs
+
+```
+Actions → [Job] → Step → See full log
+```
+
+### Enable Debug Logging
+
+```yaml
+env:
+  ACTIONS_STEP_DEBUG: true
+```
+
+Reveals more details in logs.
+
+### Run Locally
+
+Test workflow locally before pushing:
+
+```bash
+npm install -g @actions/toolkit
+
+# Run workflow file
+act -j test  # Run 'test' job
+```
+
+## Monthly Cost
+
+- **Free tier**: 2,000 minutes/month. Enough for most projects.
+- **Paid**: $0.008/minute after 2,000. ~$500/month for heavy use.
+
+(Compare to Jenkins server: $5k setup, ongoing maintenance)
+
+## Summary
+
+GitHub Actions is:
+- ✅ Free
+- ✅ Built into GitHub
+- ✅ No separate infrastructure
+- ✅ Easy to learn
+- ✅ Powerful (deploy anywhere)
+
+Use it for every project. Saves time, catches bugs, makes deploys reliable.
+
+---
+
+**Next**: Learn about [GitHub Actions security best practices](https://example.com) or read [Deploying to Kubernetes with GitHub Actions](https://example.com).

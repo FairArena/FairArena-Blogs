@@ -1,0 +1,417 @@
+---
+title: "How to Build a SaaS App from Scratch: Complete Roadmap for 2026"
+description: "Step-by-step guide to building a SaaS product: idea validation, tech stack, MVP, deployment, user acquisition, and scaling. From zero to launch."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["SaaS", "Startup", "Product Development", "Full-Stack", "2026"]
+keywords: ["how to build a SaaS app", "build saas app from scratch", "saas roadmap 2026", "startup product launch"]
+image: https://picsum.photos/seed/saas-guide/1200/630
+---
+
+# How to Build a SaaS App from Scratch: Complete Roadmap for 2026
+
+Building a SaaS app in 2026 is faster than ever. Tools like Next.js, Prisma, Stripe, and Vercel have removed friction. This guide walks you through building, launching, and scaling.
+
+## Phase 1: Validation (Weeks 1–2)
+
+Before writing code, validate your idea.
+
+### 1. Define the Problem
+
+- Who has this problem? (target customer)
+- How big is the market?
+- Are they willing to pay?
+
+Example: "Freelance writers struggle to manage client invoices. Market: ~50 million freelancers globally."
+
+### 2. Validate with Conversations
+
+Talk to 10–20 potential users:
+- "How do you currently solve this?"
+- "How much would you pay for a better solution?"
+- "Would you use this if it existed?"
+
+Record responses. If >50% say yes, continue.
+
+### 3. Land & Expand Model
+
+What's your first customer segment? Start narrow.
+- Don't try to serve everyone
+- Focus on one vertical (e.g., "invoicing for designers") first
+
+## Phase 2: MVP (Weeks 3–8)
+
+Build a minimal viable product. Not perfect, but functional.
+
+### Tech Stack (2026 Standard)
+
+**Frontend:**
+- React/Next.js (server components, API routes)
+- TailwindCSS (styling)
+- TypeScript (type safety)
+
+**Backend:**
+- Node.js + Express (or built-in Next.js API routes)
+- Prisma ORM (type-safe database queries)
+
+**Database:**
+- PostgreSQL (relational, ACID, scalable)
+
+**Auth:**
+- NextAuth.js (simple, NextAuth-compatible)
+
+**Payments:**
+- Stripe Checkout (embedded billing)
+
+**Hosting:**
+- Vercel (Next.js optimized, free tier)
+
+**Email:**
+- Resend or SendGrid (transactional emails)
+
+### Project Setup
+
+```bash
+# Create Next.js app
+npx create-next-app@latest my-saas \
+  --typescript --tailwind --eslint
+
+# Install dependencies
+npm install @prisma/client zod stripe next-auth
+
+# Setup Prisma
+npx prisma init
+
+# Create database (PostgreSQL)
+# Use Supabase (free PostgreSQL), Railway, or local
+```
+
+### Core Features for MVP
+
+**Launch with these, nothing more:**
+
+1. **User authentication** (signup/login/logout)
+2. **Dashboard** (main feature)
+3. **Payment** (Stripe integration, billing)
+4. **Onboarding** (walkthrough for new users)
+
+**Save for v2:**
+- Advanced features
+- Integrations
+- Admin dashboard
+- Analytics
+
+### Database Schema
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String
+  pro       Boolean  @default(false)  // Free vs Pro
+  stripeId  String?  // Stripe customer ID
+  
+  subscription Subscription?
+  projects     Project[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id    String   @id @default(cuid())
+  userId String   @unique
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  plan      String   // 'free', 'pro', 'enterprise'
+  status    String   // 'active', 'canceled', 'past_due'
+  stripeId  String   @unique
+  
+  currentPeriodEnd DateTime
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id    String   @id @default(cuid())
+  userId String
+  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name String
+  description String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### Implement Payment (Stripe)
+
+```typescript
+// app/api/stripe/checkout/route.ts
+import { stripe } from '@/lib/stripe';
+import { getServerSession } from 'next-auth';
+
+export async function POST() {
+  const session = await getServerSession();
+  if (!session?.user?.email) return new Response('Unauthorized', { status: 401 });
+
+  const user = await db.user.findUnique({
+    where: { email: session.user.email }
+  });
+
+  // Create Stripe session
+  const checkoutSession = await stripe.checkout.sessions.create({
+    customer_email: user!.email,
+    client_reference_id: user!.id,
+    line_items: [{
+      price: process.env.STRIPE_PRICE_ID_PRO,
+      quantity: 1,
+    }],
+    mode: 'subscription',
+    success_url: `${process.env.NEXT_PUBLIC_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_URL}/pricing`,
+  });
+
+  return Response.json({ url: checkoutSession.url });
+}
+```
+
+### Build the Dashboard
+
+```typescript
+// app/dashboard/page.tsx
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+
+export default async function Dashboard() {
+  const session = await getServerSession();
+  
+  if (!session?.user?.email) {
+    redirect('/login');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: { projects: true, subscription: true }
+  });
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
+      
+      <div className="mt-8">
+        <h2>Your Projects</h2>
+        {user?.projects.map(project => (
+          <div key={project.id} className="border p-4 rounded">
+            <h3>{project.name}</h3>
+            <p>{project.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        <h2>Plan: {user?.subscription?.plan || 'Free'}</h2>
+        {!user?.subscription && (
+          <button className="btn btn-primary">
+            Upgrade to Pro
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Phase 3: Launch (Week 9)
+
+### Pre-Launch Checklist
+
+- [ ] Security review (HTTPS, auth, input validation)
+- [ ] Performance testing (Lighthouse score >90)
+- [ ] Mobile responsive
+- [ ] Error handling (no blank errors)
+- [ ] Monitoring & logging (Sentry, DataDog)
+- [ ] Backup strategy
+- [ ] Status page (statuspage.io)
+- [ ] Support email/form
+
+### Deploy to Vercel
+
+```bash
+git push origin main
+# Vercel auto-deploys
+# https://my-saas.vercel.app
+```
+
+### Domain Setup
+
+```bash
+# Buy domain (Namecheap, GoDaddy)
+# Add custom domain in Vercel
+```
+
+### Launch Day
+
+1. Post on ProductHunt
+2. Share on Twitter/Indie Hackers
+3. Email your network
+4. Post on relevant Subreddits
+
+## Phase 4: Get Early Users (Weeks 10–12)
+
+### Content Marketing
+
+Write blog posts answering your customers' questions:
+- "How to manage [X] (the old way)"
+- "Why [X] is broken (current tools)"
+- "How [Your SaaS] solves [X]"
+
+Target long-tail keywords (e.g., "invoicing tool for Notion users").
+
+### Community Building
+
+- Join relevant communities (Discord, Slack)
+- Don't spam; help genuinely
+- Share your SaaS when relevant
+
+### Early User Feedback
+
+- Export user analytics (who's signing up, what features they use)
+- Email users: "What's your biggest pain point?"
+- Do weekly calls with early adopters
+
+## Phase 5: Iterate on Traction (Months 3–6)
+
+### Metrics to Track
+
+- **Signups**: How many people create accounts?
+- **Activation**: What % actually use the product?
+- **Retention**: What % return after day 1, week 1, month 1?
+- **Revenue**: How much are paying customers spending?
+- **Churn**: What % cancel/stop using?
+
+```typescript
+// Example: track in your database
+model Event {
+  id    String   @id @default(cuid())
+  userId String
+  event String   // 'signup', 'first_login', 'created_project', 'paid'
+  
+  createdAt DateTime @default(now())
+}
+
+// In your API routes
+await db.event.create({
+  data: {
+    userId: user.id,
+    event: 'created_project'
+  }
+});
+```
+
+### Pricing Strategy (2026)
+
+**SaaS pricing models:**
+
+1. **Freemium** (free + paid pro)
+   - Free tier: core features limited
+   - Pro: $29–99/month
+   - Pros: Lower barrier to entry
+   - Cons: High free-to-paid conversion needed
+
+2. **Free Trial** (14–30 days, then paid)
+   - No free tier, but time-limited trial
+   - Pros: Users experience full product
+   - Cons: Commitment barrier
+
+3. **Pay as You Go** (usage-based)
+   - Stripe-style: charge per API call
+   - Pros: Appeals to power users
+   - Cons: Unpredictable billing for customers
+
+**Recommended for 2026 SaaS:**
+
+```
+Tier       Price      Features
+Free       $0         5 projects, basic features
+Pro        $29/mo     50 projects, analytics
+Enterprise Ask        Custom features, SLA
+```
+
+## Phase 6: Growth & Scale (Months 6+)
+
+### Productized Services
+
+Add a "done-for-you" tier. Hire VA/contractor to do work for premium customers.
+
+### Integrations
+
+Connect to tools your customers already use (Slack, Zapier, Make). Massive traction driver.
+
+### Customer Success
+
+1. Onboarding sequence (email series)
+2. In-app tutorials (Intercom, Pendo)
+3. Proactive support (reach out if inactive)
+
+### Analytics & Dashboards
+
+Track custom events; use Mixpanel, Amplitude, or Metabase.
+
+### Hiring
+
+When should you hire?
+
+- **First employee**: When revenue > your salary
+- **Second employee**: When you have 100+ paying customers
+- **Third employee**: When you're at $10k/month ARR
+
+## Common Mistakes to Avoid
+
+1. **Building too many features** → Focus on core problem
+2. **No pricing from day 1** → Validate willingness to pay early
+3. **Ignoring user feedback** → Talk to users weekly
+4. **Poor onboarding** → New users should see value in 5 minutes
+5. **No support plan** → Users need help; respond within 24 hours
+6. **Weak SEO** → Write about your problem, not just your product
+
+## The First Year Timeline
+
+```
+Month 1: Build MVP + launch
+Month 2–3: Get 50 paid users
+Month 4–6: Iterate, reach $1k/month ARR
+Month 7–12: Scale to $10k/month, hire first employees
+```
+
+This isn't a strict timeline, but a guide.
+
+## Funding?
+
+**For 2026:**
+- **Bootstrapped** (self-funded): Profitable, slow growth
+- **Grants/YC**: Validation + $500k, but dilution + pressure
+- **Friends & Family**: $50–200k, minimal dilution, high trust
+- **Venture Capital**: $1m+, but pressure to grow 10x, exit in 7 years
+
+Most successful SaaS startups in 2026 start bootstrapped.
+
+## Summary
+
+1. **Validate before building** (talk to 20 potential users)
+2. **Build MVP quickly** (8 weeks max)
+3. **Launch publicly** (ProductHunt, Twitter)
+4. **Iterate based on feedback** (talk to users weekly)
+5. **Focus on retention** (keep users happy before acquiring new ones)
+6. **Monitor unit economics** (are you profitable per customer?)
+7. **Scale systematically** (systems before hiring)
+
+Building a SaaS in 2026 is possible in days, not months. The hard part is finding customers willing to pay.
+
+---
+
+**Next**: Learn about [SaaS pricing strategies](https://example.com) or read [Building in public: the growth hacking guide](https://example.com).

@@ -1,0 +1,390 @@
+---
+title: "Building an AI Agent with LangChain: Step-by-Step Tutorial"
+description: "Build an AI agent with LangChain: learn to build production-ready AI agents with tools, memory, chains, error handling, and deployment examples."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["AI", "LangChain", "Agents", "LLMs", "Tutorial", "2026"]
+keywords: ["Build AI agent with LangChain", "LangChain tutorial", "LangChain deployment", "AI agents 2026", "LangChain examples"]
+image: https://picsum.photos/seed/langchain-agent/1200/630
+---
+
+# Building an AI Agent with LangChain: Step-by-Step Tutorial
+
+LangChain is the standard framework for building AI agents in 2026. It handles prompts, tools, memory, and orchestration so you focus on logic.
+
+This tutorial teaches you to build a production-ready AI agent from scratch.
+
+## What We'll Build
+
+An autonomous customer support agent that:
+1. Reads customer support tickets
+2. Queries customer database
+3. Accesses knowledge base
+4. Drafts responses
+5. Escalates if needed
+
+## Install LangChain
+
+```bash
+pip install langchain langchain-community langchain-openai python-dotenv
+
+# Also install tool dependencies
+pip install requests duckduckgo-search
+```
+
+## Basic Setup
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.tools import tool
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+import os
+
+os.environ['OPENAI_API_KEY'] = 'sk-...'
+
+# Initialize LLM
+llm = ChatOpenAI(model="gpt-4", temperature=0)
+```
+
+## Define Tools
+
+Tools are functions the agent can call.
+
+```python
+from langchain.tools import tool
+
+@tool
+def get_customer_info(customer_id: str) -> dict:
+    """Get customer information from database"""
+    # Simulate database query
+    customers = {
+        'CUST001': {'name': 'John Doe', 'tier': 'premium', 'email': 'john@example.com'},
+        'CUST002': {'name': 'Jane Smith', 'tier': 'basic', 'email': 'jane@example.com'},
+    }
+    return customers.get(customer_id, {'error': 'Customer not found'})
+
+@tool
+def search_knowledge_base(query: str) -> str:
+    """Search company knowledge base for answers"""
+    # Simulate KB search
+    kb = {
+        'reset password': 'Go to /forgot-password, enter email...',
+        'billing issue': 'Check your invoice at /account/billing...',
+        'refund policy': 'We offer 30-day full refunds...',
+    }
+    
+    # Simple keyword matching
+    for key, answer in kb.items():
+        if key.lower() in query.lower():
+            return answer
+    return 'No relevant articles found'
+
+@tool
+def create_ticket(ticket_type: str, priority: str, summary: str) -> dict:
+    """Create support ticket for escalation"""
+    import uuid
+    return {
+        'ticket_id': str(uuid.uuid4())[:8],
+        'status': 'open',
+        'type': ticket_type,
+        'priority': priority,
+        'summary': summary
+    }
+
+# List all tools
+tools = [get_customer_info, search_knowledge_base, create_ticket]
+```
+
+## Create the Agent
+
+```python
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# Define prompt/system message
+prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful customer support agent. 
+Your job is to help customers with issues using the available tools.
+
+Steps:
+1. First, identify the customer and get their info
+2. Search knowledge base for solutions
+3. If you can help, provide a draft response
+4. If complex, create an escalation ticket"""),
+    
+    ("user", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+# Create agent
+agent = create_openai_functions_agent(
+    llm=llm,
+    tools=tools,
+    prompt=prompt
+)
+
+# Create executor (runs the agent loop)
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,  # Print agent's internal thoughts
+    max_iterations=10,
+)
+```
+
+## Run the Agent
+
+```python
+# Customer support ticket
+ticket = """
+Customer ID: CUST001
+Issue: I forgot my password and can't login. Also, 
+I was charged twice for my subscription. Please help!
+"""
+
+# Run agent
+result = agent_executor.invoke({
+    "input": ticket
+})
+
+print(result['output'])
+```
+
+**Agent Output** (verbose mode shows thinking):
+```
+Thought: I need to help this customer with two issues:
+1. Forgot password
+2. Charged twice
+
+Let me start by getting their customer info.
+
+Action: get_customer_info
+Action Input: {"customer_id": "CUST001"}
+
+Observation: {'name': 'John Doe', 'tier': 'premium', 'email': 'john@example.com'}
+
+Thought: Now let me search for password reset solution.
+
+Action: search_knowledge_base
+Action Input: {"query": "reset password"}
+
+Observation: Go to /forgot-password, enter email...
+
+Thought: Good, I have password reset info. Now let me search for billing.
+
+Action: search_knowledge_base
+Action Input: {"query": "billing charged twice double charge refund"}
+
+Observation: We offer 30-day full refunds...
+
+Thought: I can help with password reset, but the billing issue needs escalation.
+
+Action: create_ticket
+Action Input: {
+  "ticket_type": "billing",
+  "priority": "high",
+  "summary": "Customer charged twice - needs billing review"
+}
+
+Observation: {'ticket_id': 'abc12345', 'status': 'open', 'priority': 'high'}
+
+Final Answer:
+Hi John,
+
+For your password issue:
+- Visit https://app.example.com/forgot-password
+- Enter your email (john@example.com)
+- Check email for reset link
+
+For your billing issue:
+I've escalated this to our billing team (Ticket #abc12345). 
+They'll review the double charge and process a refund within 24 hours.
+
+We appreciate your business!
+```
+
+## Advanced: Add Memory
+
+Agents that remember conversation history.
+
+```python
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True,  # Use message objects
+    human_prefix="Customer",
+    ai_prefix="Support Agent"
+)
+
+# Run with memory
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    memory=memory,
+    verbose=True
+)
+
+# First message
+result1 = agent_executor.invoke({
+    "input": "Hi, I can't login"
+})
+
+# Second message (agent remembers first message)
+result2 = agent_executor.invoke({
+    "input": "I still haven't received the reset email"  
+})
+# Agent knows context from first message
+```
+
+## Add Error Handling
+
+Agents can fail. Handle gracefully.
+
+```python
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    handle_parsing_errors=True,  # Handle bad tool calls
+    max_iterations=5,  # Prevent infinite loops
+)
+
+# Wrap in try-catch
+try:
+    result = agent_executor.invoke({"input": user_input})
+except Exception as e:
+    print(f"Agent error: {e}")
+    # Fallback: escalate to human
+    create_ticket("escalation", "high", "AI agent failed")
+```
+
+## Deploy as API
+
+**FastAPI**:
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class SupportRequest(BaseModel):
+    customer_id: str
+    issue: str
+
+@app.post("/support")
+async def get_support(request: SupportRequest):
+    result = agent_executor.invoke({
+        "input": f"Customer ID: {request.customer_id}\nIssue:{request.issue}"
+    })
+    
+    return {
+        "response": result['output'],
+        "steps_taken": len(result['intermediate_steps'])
+    }
+```
+
+**Deploy**:
+```bash
+pip install fastapi uvicorn
+uvicorn main:app --reload
+# http://localhost:8000/docs (Swagger UI)
+```
+
+## Monitor & Log
+
+```python
+from langchain.callbacks import FileCallbackHandler
+
+# Log agent actions
+handler = FileCallbackHandler('agent.log')
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    callbacks=[handler],
+    verbose=True
+)
+
+# Log format:
+# [AGENT] get_customer_info called
+# [OBSERVATION] {'name': 'John Doe', ...}
+# [THOUGHT] Customer found, searching KB...
+```
+
+## Cost Optimization
+
+Agents make many LLM calls (expensive!). Optimize:
+
+```python
+# 1. Use faster model (gpt-3.5-turbo instead of gpt-4)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+# 2. Use cheaper embeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+# 3. Cache tool outputs
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.globals import set_llm_cache
+from langchain.cache import SQLAlchemy
+
+set_llm_cache(SQLAlchemy())  # Cache LLM responses
+
+# 4. Limit iterations
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    max_iterations=3,  # Don't loop infinitely
+)
+```
+
+## Test the Agent
+
+```python
+def test_password_reset():
+    result = agent_executor.invoke({
+        "input": "I forgot my password"
+    })
+    assert "forgot-password" in result['output'].lower()
+    assert "email" in result['output'].lower()
+
+def test_complex_issue():
+    result = agent_executor.invoke({
+        "input": "Billing issue + can't login + need refund"
+    })
+    # Should create escalation ticket
+    assert result['intermediate_steps'][-1][0].tool == 'create_ticket'
+
+if __name__ == "__main__":
+    test_password_reset()
+    test_complex_issue()
+    print("All tests passed!")
+```
+
+## Production Checklist
+
+- [ ] Error handling (tool failures, LLM errors)
+- [ ] Logging & monitoring
+- [ ] Rate limiting (expensive API calls)
+- [ ] Authentication (who calls the agent?)
+- [ ] Cost tracking (log LLM token usage)
+- [ ] Fallback to human (agent can't solve)
+- [ ] SLA compliance (respond fast enough)
+- [ ] Testing (test different input scenarios)
+
+## Summary
+
+LangChain makes building agents simple:
+- **Tools**: Functions agent can call
+- **Memory**: Remembers conversation
+- **Handlers**: Catch errors, log actions
+- **Executor**: Runs the agent loop
+
+From prototype to production, LangChain handles the complexity.
+
+---
+
+**Next**: Learn about [Building multi-agent systems](https://example.com) or read [Fine-tuning LLMs for your domain](https://example.com).

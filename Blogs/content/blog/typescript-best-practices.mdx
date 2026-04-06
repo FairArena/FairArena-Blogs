@@ -1,0 +1,514 @@
+---
+title: "TypeScript Best Practices for 2026: Strict Mode & Type Safety"
+description: "Master TypeScript in 2026: strict mode, type inference, generics, advanced patterns, and how to avoid type-related bugs. Complete guide."
+date: 2026-04-06
+author: FairArena Content Team
+tags: ["TypeScript", "Type Safety", "Best Practices", "Development", "2026"]
+keywords: ["TypeScript best practices", "TypeScript strict mode", "type safety in TypeScript", "TypeScript 2026"]
+image: https://picsum.photos/seed/typescript-guide/1200/630
+---
+
+# TypeScript Best Practices for 2026: Strict Mode & Type Safety
+
+TypeScript adoption surged in 2026. Teams using `strict: true` report ~40% fewer production bugs. This guide teaches you TypeScript best practices that make code bulletproof.
+
+## TypeScript Basics
+
+### What is TypeScript?
+
+TypeScript adds static typing to JavaScript. Catch errors at compile time, not runtime.
+
+```typescript
+// JavaScript (runtime error)
+function add(a, b) {
+  return a + b;
+}
+add('5', 3);  // '53' (oops, concatenation!)
+
+// TypeScript (compile error)
+function add(a: number, b: number): number {
+  return a + b;
+}
+add('5', 3);  // ❌ Type 'string' is not assignable to type 'number'
+```
+
+## Enable Strict Mode
+
+Always use `"strict": true` in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "target": "es2020"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}
+```
+
+With strict mode, impossible errors become impossible.
+
+## Type Inference
+
+Let TypeScript infer types when obvious:
+
+```typescript
+// Over-annotated (unnecessary)
+const count: number = 0;
+const name: string = 'John';
+
+// Good (TypeScript infers)
+const count = 0;           // number
+const name = 'John';       // string
+const users = [{ id: 1 }]; // User[]
+```
+
+But be explicit for function parameters and returns:
+
+```typescript
+// Good: explicit input/output
+function greet(name: string): string {
+  return `Hello, ${name}`;
+}
+
+// Avoid: implicit parameter types
+function greet(name) {  // ❌ Even with inference, be explicit
+  return `Hello, ${name}`;
+}
+```
+
+## Interfaces & Types
+
+### Use `interface` for Objects
+
+```typescript
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+const user: User = {
+  id: 1,
+  name: 'John',
+  email: 'john@example.com',
+  createdAt: new Date(),
+};
+```
+
+### Use `type` for Unions & Aliases
+
+```typescript
+// Type alias for union
+type Status = 'active' | 'inactive' | 'pending';
+
+type Response<T> = 
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+// Use it
+const response: Response<User> = {
+  success: true,
+  data: user,
+};
+```
+
+### Extend Interfaces
+
+```typescript
+interface BaseUser {
+  id: number;
+  name: string;
+}
+
+interface AdminUser extends BaseUser {
+  role: 'admin';
+  permissions: string[];
+}
+
+const admin: AdminUser = {
+  id: 1,
+  name: 'Alice',
+  role: 'admin',
+  permissions: ['delete-user', 'view-logs'],
+};
+```
+
+## Generics
+
+Write reusable, type-safe code:
+
+```typescript
+// Generic function
+function getItem<T>(items: T[], index: number): T {
+  return items[index];
+}
+
+const numbers = [1, 2, 3];
+const firstNumber = getItem(numbers, 0);  // ✅ number
+
+const strings = ['a', 'b', 'c'];
+const firstString = getItem(strings, 0);  // ✅ string
+```
+
+### Generic with Constraints
+
+```typescript
+// Only accept objects with an `id` property
+interface HasId {
+  id: number;
+}
+
+function getId<T extends HasId>(obj: T): number {
+  return obj.id;
+}
+
+getId({ id: 1, name: 'John' });      // ✅
+getId({ name: 'John' });  // ❌ Type 'object' does not satisfy the constraint
+```
+
+### Generic Async Functions
+
+```typescript
+async function fetchData<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  return response.json() as T;
+}
+
+interface Post {
+  id: number;
+  title: string;
+}
+
+const post = await fetchData<Post>('/api/posts/1');
+// post is typed as Post
+```
+
+## Utility Types
+
+TypeScript provides built-in utility types:
+
+```typescript
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Partial<T>: all properties optional
+type PartialUser = Partial<User>;
+// { id?: number; name?: string; email?: string }
+
+// Pick<T, Keys>: select specific properties
+type UserPreview = Pick<User, 'id' | 'name'>;
+// { id: number; name: string }
+
+// Omit<T, Keys>: exclude specific properties
+type PublicUser = Omit<User, 'email'>;
+// { id: number; name: string }
+
+// Readonly<T>: make all properties readonly
+type ReadonlyUser = Readonly<User>;
+// { readonly id: number; readonly name: string; readonly email: string }
+
+// Record<K, T>: create object with specific keys
+type UserRoles = Record<'admin' | 'user' | 'guest', boolean>;
+// { admin: boolean; user: boolean; guest: boolean }
+```
+
+## Union & Intersection Types
+
+### Union Types (A OR B)
+
+```typescript
+type Result = string | number;
+
+const value: Result = 'success';  // ✅
+const count: Result = 42;         // ✅
+const flag: Result = true;        // ❌
+```
+
+### Discriminated Unions
+
+Great for state machines:
+
+```typescript
+type LoadingState = { status: 'loading' };
+type SuccessState = { status: 'success'; data: string };
+type ErrorState = { status: 'error'; error: string };
+
+type State = LoadingState | SuccessState | ErrorState;
+
+function handleState(state: State) {
+  if (state.status === 'loading') {
+    console.log('Loading...');
+  } else if (state.status === 'success') {
+    console.log(state.data);  // ✅ TypeScript knows data exists
+  } else {
+    console.log(state.error);  // ✅ TypeScript knows error exists
+  }
+}
+```
+
+### Intersection Types (A AND B)
+
+```typescript
+interface HasName { name: string }
+interface HasAge { age: number }
+
+type Person = HasName & HasAge;
+
+const person: Person = {
+  name: 'John',
+  age: 30,
+};
+```
+
+## Null Safety
+
+With `strictNullChecks`, null/undefined are explicit:
+
+```typescript
+// Without strict: null/undefined possible everywhere
+function getName(user) {  // user could be null
+  return user.name;  // Crash!
+}
+
+// With strict:
+function getName(user: User | null): string {
+  if (!user) return 'Unknown';
+  return user.name;  // ✅ Safe
+}
+
+// Or use nullish coalescing
+function getName(user: User | null): string {
+  return user?.name ?? 'Unknown';  // Safe, concise
+}
+```
+
+## Advanced Patterns
+
+### Conditional Types
+
+```typescript
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<'hello'>;  // true
+type B = IsString<42>;       // false
+```
+
+### Mapped Types
+
+Transform object types:
+
+```typescript
+type Readonly<T> = {
+  readonly [K in keyof T]: T[K];
+};
+
+// Add 'getter' methods
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+};
+
+type User = { name: string; age: number };
+type UserGetters = Getters<User>;
+// { getName: () => string; getAge: () => number }
+```
+
+## React + TypeScript
+
+### Typing Props
+
+```typescript
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: 'primary' | 'secondary';
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  label,
+  onClick,
+  disabled = false,
+  variant = 'primary',
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn-${variant}`}
+    >
+      {label}
+    </button>
+  );
+};
+```
+
+### Typing useState
+
+```typescript
+const [user, setUser] = useState<User | null>(null);
+const [count, setCount] = useState(0);  // TypeScript infers number
+
+// Type-safe updates
+setUser({ id: 1, name: 'John' });
+setCount(5);
+```
+
+### Typing API Calls
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+async function getUser(id: number): Promise<ApiResponse<User>> {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+
+// Type-safe usage
+const result = await getUser(1);
+if (result.success) {
+  console.log(result.data.name);  // ✅ String
+} else {
+  console.log(result.error);      // ✅ String | undefined
+}
+```
+
+## Avoiding Common Mistakes
+
+### 1. Don't Use `any`
+
+```typescript
+// Bad: loses all type safety
+function process(data: any) {
+  return data.toUpperCase();  // oops, number doesn't have toUpperCase
+}
+
+// Good: use generics or unions
+function process<T>(data: T): T {
+  return data;
+}
+
+function processString(data: string): string {
+  return data.toUpperCase();
+}
+```
+
+### 2. Don't Ignore `as` Casts
+
+```typescript
+// Bad: unsafe cast
+const user = response.json() as User;
+
+// Good: validate
+const user = validateUser(response.json());
+
+function validateUser(data: unknown): User {
+  if (!data || typeof data !== 'object') throw new Error('Invalid user');
+  if (!('id' in data && 'name' in data)) throw new Error('Missing fields');
+  return data as User;
+}
+```
+
+### 3. Don't Over-Nest Types
+
+```typescript
+// Bad: hard to read
+type Response = {
+  success: boolean;
+  data: {
+    user: {
+      id: number;
+      profile: {
+        name: string;
+        email: string;
+      };
+    };
+  };
+};
+
+// Good: extract to interfaces
+interface UserProfile {
+  name: string;
+  email: string;
+}
+
+interface User {
+  id: number;
+  profile: UserProfile;
+}
+
+interface Response {
+  success: boolean;
+  data: { user: User };
+}
+```
+
+## Tooling
+
+### TypeScript Compiler Options
+
+```bash
+# Check types without emitting
+tsc --noEmit
+
+# Watch mode (recompile on change)
+tsc --watch
+```
+
+### ESLint + TypeScript
+
+```bash
+npm install --save-dev @typescript-eslint/parser @typescript-eslint/eslint-plugin
+```
+
+**.eslintrc.json**:
+```json
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": "error"
+  }
+}
+```
+
+## Summary
+
+- **Always use `strict: true`**
+- **Explicit function signatures** (inputs, outputs)
+- **Use generics** for reusable type-safe code
+- **Prefer interfaces/types** over `any`
+- **Discriminated unions** for state management
+- **Utility types** (Partial, Pick, Omit, etc.)
+- **Don't cast to `as`** unless validated
+
+TypeScript isn't about writing more code—it's about catching bugs before users do.
+
+---
+
+**Next**: Learn about [advanced React patterns with TypeScript](https://example.com) or read [Testing TypeScript code](https://example.com).
