@@ -1,7 +1,7 @@
 import { blog } from 'fumadocs-mdx:collections/server';
 
 export async function GET() {
-  const baseUrl = 'https://blog.fairarena.app';
+  const baseUrl = 'https://blogs.fairarena.app';
   
   // Get all blog posts from the raw collection
   const allPosts = blog.docs || [];

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/api/',
     },
-    sitemap: 'https://blog.fairarena.app/sitemap.xml',
+    sitemap: 'https://blogs.fairarena.app/sitemap.xml',
   };
 }

@@ -38,7 +38,7 @@ export function JsonLd({
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://blog.fairarena.app/blog/${slug}`,
+      '@id': `https://blogs.fairarena.app/blog/${slug}`,
     },
   };
 

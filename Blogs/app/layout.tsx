@@ -13,7 +13,7 @@ const font = Outfit({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://blog.fairarena.app'),
+  metadataBase: new URL('https://blogs.fairarena.app'),
   title: {
     template: '%s | FairArena Blog',
     default: 'FairArena Engineering Blog',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description:
     'Technical insights, manufacturing updates, and engineering deep dives from the team building FairArena.',
   openGraph: {
-    url: 'https://blog.fairarena.app',
+    url: 'https://blogs.fairarena.app',
     siteName: 'FairArena Blog',
     locale: 'en_US',
     type: 'website',
@@ -60,6 +60,14 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={font.className} suppressHydrationWarning>
+    <head>
+      <meta name="google-adsense-account" content="ca-pub-2884972450996266" />
+      <script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2884972450996266"
+        crossOrigin="anonymous"
+      ></script>
+    </head>
       <body className="flex flex-col min-h-screen" suppressHydrationWarning>
         <RootProvider>
           <HomeLayout
